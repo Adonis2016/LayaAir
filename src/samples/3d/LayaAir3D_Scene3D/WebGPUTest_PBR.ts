@@ -63,20 +63,20 @@ export class WebGPUTest_PBR {
             Config3D.enableDynamicBatch = false;
             //Stat.show();
 
-            const scene: Scene3D = (<Scene3D>Laya.stage.addChild(new Scene3D()));
+            const scene = Laya.stage.addChild(new Scene3D());
 
             //初始化天空渲染器
-            // const skyRenderer = scene.skyRenderer;
-            // //创建天空盒mesh
-            // skyRenderer.mesh = SkyDome.instance;
-            // //使用程序化天空盒
-            // skyRenderer.material = new SkyProceduralMaterial();
+            const skyRenderer = scene.skyRenderer;
+            //创建天空盒mesh
+            skyRenderer.mesh = SkyDome.instance;
+            //使用程序化天空盒
+            skyRenderer.material = new SkyProceduralMaterial();
 
-            const camera: Camera = (<Camera>(scene.addChild(new Camera(0, 0.1, 300))));
+            const camera = scene.addChild(new Camera(0, 0.1, 300));
             camera.transform.translate(new Vector3(0, 0.5, 5));
             camera.transform.rotate(new Vector3(-15, 0, 0), true, false);
-            camera.clearColor = Color.BLACK;
-            camera.clearFlag = CameraClearFlags.SolidColor;
+            camera.clearColor = Color.BLUE;
+            camera.clearFlag = CameraClearFlags.Sky;
             camera.msaa = true;
             if (this.useWebGPU) {
                 WebGPURenderEngine._instance._config.msaa = camera.msaa;

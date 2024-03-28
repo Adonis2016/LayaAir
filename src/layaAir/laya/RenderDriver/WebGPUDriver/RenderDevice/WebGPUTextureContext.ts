@@ -15,6 +15,8 @@ import { WebGPURenderEngine } from "./WebGPURenderEngine";
 import { WebGPURenderPassHelper } from "./WebGPURenderPassHelper";
 import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
 
+const WebGPUCubeMap = [4, 5, 0, 1, 2, 3];
+
 enum WebGPUTextureDimension {
     D1D = "1d",
     D2D = "2d",
@@ -395,6 +397,7 @@ export class WebGPUTextureContext implements ITextureContext {
     }
 
     async setTextureImageData(texture: InternalTexture, source: HTMLCanvasElement | HTMLImageElement | ImageBitmap, premultiplyAlpha: boolean, invertY: boolean) {
+        if (!source) return;
         const imageBitmapSource = await createImageBitmap(source);
         const image: GPUImageCopyExternalImage = { source: imageBitmapSource as ImageBitmap, flipY: invertY, origin: [0, 0] };
 
@@ -409,17 +412,15 @@ export class WebGPUTextureContext implements ITextureContext {
             colorSpace: texture.useSRGBLoad ? "srgb" : undefined,
         };
         const copySize: GPUExtent3DStrict = { width: source.width, height: source.height };
-
-        if (source) {
-            const device = WebGPURenderEngine._instance.getDevice();
-            device.queue.copyExternalImageToTexture(image, textureCopyView, copySize);
-            //Generate mipmap TODO
-            if (texture.mipmap)
-                genMipmap(device, texture.resource);
-        }
+        const device = WebGPURenderEngine._instance.getDevice();
+        device.queue.copyExternalImageToTexture(image, textureCopyView, copySize);
+        //Generate mipmap TODO
+        if (texture.mipmap)
+            genMipmap(device, texture.resource);
     }
 
     setTextureSubImageData(texture: InternalTexture, source: HTMLCanvasElement | HTMLImageElement | ImageBitmap, x: number, y: number, premultiplyAlpha: boolean, invertY: boolean): void {
+        if (!source) return;
         const image: GPUImageCopyExternalImage = { source: source as any, flipY: invertY, origin: { x: 0, y: 0 } };
         const textureCopyView: GPUImageCopyTextureTagged = {
             texture: texture.resource,
@@ -433,7 +434,6 @@ export class WebGPUTextureContext implements ITextureContext {
 
         };
         const copySize: GPUExtent3DStrict = { width: source.width, height: source.height };
-
         WebGPURenderEngine._instance.getDevice().queue.copyExternalImageToTexture(image, textureCopyView, copySize);
     }
 
@@ -587,6 +587,7 @@ export class WebGPUTextureContext implements ITextureContext {
     }
 
     setTexturePixelsData(texture: WebGPUInternalTex, source: ArrayBufferView, premultiplyAlpha: boolean, invertY: boolean): void {
+        if (!source) return;
         const imageCopy: GPUImageCopyTextureTagged = {
             texture: texture.resource,
             mipLevel: 0,
@@ -604,16 +605,16 @@ export class WebGPUTextureContext implements ITextureContext {
             width: Math.ceil(texture.width / block.width) * block.width,
             height: Math.ceil(height / block.height) * block.height,
         }
-        if (source) {
-            const device = WebGPURenderEngine._instance.getDevice();
-            device.queue.writeTexture(imageCopy, source.buffer, dataLayout, size);
-            //Generate mipmap
-            if (texture.mipmap)
-                genMipmap(device, texture.resource);
-        }
+
+        const device = WebGPURenderEngine._instance.getDevice();
+        device.queue.writeTexture(imageCopy, source.buffer, dataLayout, size);
+        //Generate mipmap
+        if (texture.mipmap)
+            genMipmap(device, texture.resource);
     }
 
     setTextureSubPixelsData(texture: WebGPUInternalTex, source: ArrayBufferView, mipmapLevel: number, generateMipmap: boolean, xOffset: number, yOffset: number, width: number, height: number, premultiplyAlpha: boolean, invertY: boolean): void {
+        if (!source) return;
         const imageCopy: GPUImageCopyTextureTagged = {
             texture: texture.resource,
             mipLevel: mipmapLevel,
@@ -634,13 +635,12 @@ export class WebGPUTextureContext implements ITextureContext {
             width: Math.ceil(width / block.width) * block.width,
             height: Math.ceil(height / block.height) * block.height,
         }
-        if (source) {
-            const device = WebGPURenderEngine._instance.getDevice();
-            WebGPURenderEngine._instance.getDevice().queue.writeTexture(imageCopy, source.buffer, dataLayout, size);
-            //Generate mipmap
-            if (generateMipmap)
-                genMipmap(device, texture.resource);
-        }
+
+        const device = WebGPURenderEngine._instance.getDevice();
+        device.queue.writeTexture(imageCopy, source.buffer, dataLayout, size);
+        //Generate mipmap
+        if (generateMipmap)
+            genMipmap(device, texture.resource);
     }
 
     initVideoTextureData(texture: InternalTexture): void {
@@ -656,95 +656,99 @@ export class WebGPUTextureContext implements ITextureContext {
         const hdrPixelData = hdrInfo.readScanLine();
         this.setTexturePixelsData(texture, hdrPixelData, false, false);
     }
-    setCubeImageData(texture: InternalTexture, sources: (HTMLCanvasElement | HTMLImageElement | ImageBitmap)[], premultiplyAlpha: boolean, invertY: boolean): void {
+    setCubeImageData(texture: InternalTexture, source: (HTMLCanvasElement | HTMLImageElement | ImageBitmap)[], premultiplyAlpha: boolean, invertY: boolean): void {
+        if (!source) return;
         for (let index = 0; index < 6; index++) {
-            const source = sources[index];
-            const image: GPUImageCopyExternalImage = { source: source as any, flipY: invertY, origin: { x: 0, y: 0 } };
-            const textureCopyView: GPUImageCopyTextureTagged = {
-                texture: texture.resource,
-                origin: {
-                    x: 0,
-                    y: 0,
-                    z: index
-                },
-                mipLevel: 0,
-                premultipliedAlpha: premultiplyAlpha,
-                colorSpace: texture.useSRGBLoad ? "srgb" : undefined
-            };
-            const copySize: GPUExtent3DStrict = { width: source.width, height: source.height };
-            WebGPURenderEngine._instance.getDevice().queue.copyExternalImageToTexture(image, textureCopyView, copySize);
+            const sourceData = source[index];
+            if (sourceData) {
+                const image: GPUImageCopyExternalImage = { source: sourceData as any, flipY: invertY, origin: { x: 0, y: 0 } };
+                const textureCopyView: GPUImageCopyTextureTagged = {
+                    texture: texture.resource,
+                    origin: {
+                        x: 0,
+                        y: 0,
+                        z: WebGPUCubeMap[index]
+                    },
+                    mipLevel: 0,
+                    premultipliedAlpha: premultiplyAlpha,
+                    colorSpace: texture.useSRGBLoad ? "srgb" : undefined
+                };
+                const copySize: GPUExtent3DStrict = { width: sourceData.width, height: sourceData.height };
+                WebGPURenderEngine._instance.getDevice().queue.copyExternalImageToTexture(image, textureCopyView, copySize);
+            }
         }
         //Generate mipmap
         if (texture.mipmap)
             genMipmap(WebGPURenderEngine._instance.getDevice(), texture.resource);
     }
     setCubePixelsData(texture: WebGPUInternalTex, source: ArrayBufferView[], premultiplyAlpha: boolean, invertY: boolean): void {
-        //invert TODO
+        if (!source) return;
         for (let index = 0; index < 6; index++) {
             const sourceData = source[index];
-            const imageCopy: GPUImageCopyTextureTagged = {
-                texture: texture.resource,
-                mipLevel: 0,
-                premultipliedAlpha: premultiplyAlpha,
-                origin: {
-                    x: 0,
-                    y: 0,
-                    z: Math.max(index, 0),
+            if (sourceData) {
+                const imageCopy: GPUImageCopyTextureTagged = {
+                    texture: texture.resource,
+                    mipLevel: 0,
+                    premultipliedAlpha: premultiplyAlpha,
+                    origin: {
+                        x: 0,
+                        y: 0,
+                        z: WebGPUCubeMap[index]
+                    }
                 }
-            }
-            const block = this._getBlockInformationFromFormat(texture._webGPUFormat);
-            const bytesPerRow = Math.ceil(texture.width / block.width) * block.length;
-            const height = texture.height;
-            const dataLayout: GPUImageDataLayout = {
-                offset: 0,
-                bytesPerRow: bytesPerRow,
-                rowsPerImage: height
-            }
-            const size = {
-                width: Math.ceil(texture.width / block.width) * block.width,
-                height: Math.ceil(height / block.height) * block.height,
-                depthOrArrayLayers: 1
-            }
-            if (source)
+                const width = texture.width;
+                const height = texture.height;
+                const block = this._getBlockInformationFromFormat(texture._webGPUFormat);
+                const bytesPerRow = Math.ceil(width / block.width) * block.length;
+                const dataLayout: GPUImageDataLayout = {
+                    offset: 0,
+                    bytesPerRow: bytesPerRow,
+                    rowsPerImage: height
+                }
+                const size = {
+                    width: Math.ceil(width / block.width) * block.width,
+                    height: Math.ceil(height / block.height) * block.height,
+                    depthOrArrayLayers: 1
+                }
                 WebGPURenderEngine._instance.getDevice().queue.writeTexture(imageCopy, sourceData.buffer, dataLayout, size);
+            }
         }
         //Generate mipmap
         if (texture.mipmap)
             genMipmap(WebGPURenderEngine._instance.getDevice(), texture.resource);
     }
     setCubeSubPixelData(texture: WebGPUInternalTex, source: ArrayBufferView[], mipmapLevel: number, generateMipmap: boolean, xOffset: number, yOffset: number, width: number, height: number, premultiplyAlpha: boolean, invertY: boolean): void {
-        //invert TODO
+        if (!source) return;
         generateMipmap = generateMipmap && mipmapLevel === 0;
         for (let index = 0; index < 6; index++) {
             const sourceData = source[index];
-            const imageCopy: GPUImageCopyTextureTagged = {
-                texture: texture.resource,
-                mipLevel: mipmapLevel,
-                premultipliedAlpha: premultiplyAlpha,
-                origin: {
-                    x: xOffset,
-                    y: yOffset,
-                    z: Math.max(index, 0)
+            if (sourceData) {
+                const imageCopy: GPUImageCopyTextureTagged = {
+                    texture: texture.resource,
+                    mipLevel: mipmapLevel,
+                    premultipliedAlpha: premultiplyAlpha,
+                    origin: {
+                        x: xOffset,
+                        y: yOffset,
+                        z: WebGPUCubeMap[index]
+                    }
                 }
-            }
-            const block = this._getBlockInformationFromFormat(texture._webGPUFormat);
-            const bytesPerRow = Math.ceil(width / block.width) * block.length;
-            const dataLayout: GPUImageDataLayout = {
-                offset: 0,
-                bytesPerRow: bytesPerRow,
-                rowsPerImage: height
-            }
-            const size = {
-                width: Math.ceil(texture.width / block.width) * block.width,
-                height: Math.ceil(height / block.height) * block.height,
-                depthOrArrayLayers: 1
-            }
-            if (sourceData)
+                const block = this._getBlockInformationFromFormat(texture._webGPUFormat);
+                const bytesPerRow = Math.ceil(width / block.width) * block.length;
+                const dataLayout: GPUImageDataLayout = {
+                    offset: 0,
+                    bytesPerRow: bytesPerRow,
+                    rowsPerImage: height
+                }
+                const size = {
+                    width: Math.ceil(width / block.width) * block.width,
+                    height: Math.ceil(height / block.height) * block.height,
+                    depthOrArrayLayers: 1
+                }
                 WebGPURenderEngine._instance.getDevice().queue.writeTexture(imageCopy, sourceData.buffer, dataLayout, size);
-            //this._engine._device.queue.writeTexture(image, textureCopyView, copySize);
+            }
         }
         if (texture.mipmap && generateMipmap)
-            //Generate mipmap
             genMipmap(WebGPURenderEngine._instance.getDevice(), texture.resource);
     }
     setCubeDDSData(texture: InternalTexture, ddsInfo: DDSTextureInfo): void {

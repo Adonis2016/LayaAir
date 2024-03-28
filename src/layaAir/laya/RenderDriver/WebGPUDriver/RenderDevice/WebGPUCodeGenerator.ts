@@ -14,6 +14,12 @@ import { NameAndType, NameNumberMap, NameStringMap, roundUp } from "./WebGPUComm
 import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
 import { WebGPUUniformBlockInfo } from "./WebGPUUniform/WebGPUUniformBlockInfo";
 
+type UniformItemType = {
+    name: string; //名称，可能是带数组的名称
+    type: ShaderDataType; //类型
+};
+type UniformMapTypeEx = { [key: string]: UniformItemType };
+
 export enum WebGPUBindingInfoType {
     buffer,
     texture,
@@ -102,7 +108,7 @@ export class WebGPUCodeGenerator {
      * @param uniformMap 
      * @param arrayMap 
      */
-    static uniformString(uniformMap: UniformMapType, arrayMap: NameNumberMap) {
+    static uniformString(uniformMap: UniformMapTypeEx, arrayMap: NameNumberMap) {
         const scene3DUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("Scene3D") as WebGLCommandUniformMap;
         const cameraUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("BaseCamera") as WebGLCommandUniformMap;
         const sprite3DUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("Sprite3D") as WebGLCommandUniformMap;
@@ -126,8 +132,8 @@ export class WebGPUCodeGenerator {
         }
 
         const regex = /\[(.*?)\]/g;
-        const _catalog = (name: string, type: string) => {
-            const id = Shader3D.propertyNameToID(name.replace(regex, '_'));
+        const _catalog = (key: string, name: string, type: string) => {
+            const id = Shader3D.propertyNameToID(key.replace(regex, '_'));
             if (scene3DUniformMap.hasPtrID(id)) {
                 if (!_have(scene3DUniforms, name))
                     scene3DUniforms.push({ name, type, set: 0 });
@@ -164,24 +170,15 @@ export class WebGPUCodeGenerator {
                 materialUniforms.push({ name, type, set: 3 });
         }
 
+        for (const key in uniformMap) {
+            const dataType = this.getAttributeT2S(<ShaderDataType>uniformMap[key].type);
+            _catalog(key, uniformMap[key].name, dataType);
+        }
+
         if (sprite3DUniforms.length === 0)
             sprite3DUniforms.push({ name: 'u_WorldMat', type: 'mat4', set: 2 });
         if (materialUniforms.length === 0)
             materialUniforms.push({ name: 'u_AlbedoColor', type: 'vec4', set: 3 });
-
-        for (const key in uniformMap) {
-            if (typeof uniformMap[key] === "object") { //block
-                const blockUniforms = <{ [name: string]: ShaderDataType }>uniformMap[key];
-                for (const uniformName in blockUniforms) {
-                    const dataType = this.getAttributeT2S(blockUniforms[uniformName]);
-                    _catalog(uniformName, dataType);
-                }
-            }
-            else { //uniform
-                const dataType = this.getAttributeT2S(<ShaderDataType>uniformMap[key]);
-                _catalog(key, dataType);
-            }
-        }
 
         let uniformGLSL = '';
         const typeNum = 10;
@@ -599,6 +596,18 @@ mat4 inverse(mat4 m)
         const clusterSlices = Config3D.lightClusterCount;
         const defMap: any = {};
 
+        //将uniformMap转换为uniformMapEx
+        const uniformMapEx: UniformMapTypeEx = {};
+        for (const key in uniformMap) {
+            if (typeof uniformMap[key] === "object") {
+                const blockUniform = <{ [name: string]: ShaderDataType }>uniformMap[key];
+                for (const uniformName in blockUniform) {
+                    const dataType = blockUniform[uniformName];
+                    uniformMapEx[uniformName] = { name: uniformName, type: dataType };
+                }
+            } else uniformMapEx[key] = { name: key, type: uniformMap[key] as ShaderDataType };
+        }
+
         let defineStr: string = "";
         defineStr += "#define MAX_LIGHT_COUNT " + Config3D.maxLightCount + "\n";
         defineStr += "#define MAX_LIGHT_COUNT_PER_CLUSTER " + Config3D._maxAreaLightCountPerClusterAverage + "\n";
@@ -627,7 +636,7 @@ mat4 inverse(mat4 m)
         let fsNeedInverseFunc = false;
         const vsTod: TypeOutData = {};
         const fsTod: TypeOutData = {};
-        //提取uniform和varying参数
+        //提取VertexShader的uniform和varying参数
         {
             const defs: Set<string> = new Set();
             const ret = WebGPUShaderCompileDef.compile(vs.join('\n'), defs);
@@ -640,16 +649,19 @@ mat4 inverse(mat4 m)
             if (vsOut.indexOf('inverse') === -1)
                 vsNeedInverseFunc = false;
             if (vsTod.uniform)
-                for (const key in vsTod.uniform) {
-                    if (!uniformMap[key]) {
-                        if (vsTod.uniform[key].length && vsTod.uniform[key].length[0] > 0) {
-                            uniformMap[`${key}[${vsTod.uniform[key].length[0]}]`]
-                                = this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType;
-                            arrayMap[`${key}[${vsTod.uniform[key].length[0]}]`] = vsTod.uniform[key].length[0];
+                for (const key in vsTod.uniform)
+                    if (!uniformMapEx[key]) {
+                        if (vsTod.uniform[key].length && vsTod.uniform[key].length[0]) {
+                            uniformMapEx[key] = {
+                                name: `${key}[${vsTod.uniform[key].length[0]}]`,
+                                type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
+                            };
+                            arrayMap[key] = vsTod.uniform[key].length[0];
+                        } else uniformMapEx[key] = {
+                            name: key,
+                            type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
                         }
-                        else uniformMap[key] = this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType;
                     }
-                }
             if (vsTod.varying)
                 for (const key in vsTod.varying)
                     if (!varyingMapVS[key])
@@ -662,6 +674,7 @@ mat4 inverse(mat4 m)
                 attributeMap = attributeMap2;
             }
         }
+        //提取FragmentShader的uniform和varying参数
         {
             const defs: Set<string> = new Set();
             const fsOrg = fs.join('\n');
@@ -675,16 +688,19 @@ mat4 inverse(mat4 m)
             if (fsOut.indexOf('inverse') === -1)
                 fsNeedInverseFunc = false;
             if (fsTod.uniform)
-                for (const key in fsTod.uniform) {
-                    if (!uniformMap[key]) {
-                        if (fsTod.uniform[key].length && fsTod.uniform[key].length[0] > 0) {
-                            uniformMap[`${key}[${fsTod.uniform[key].length[0]}]`]
-                                = this.getAttributeS2T(fsTod.uniform[key].type) as ShaderDataType;
-                            arrayMap[`${key}[${fsTod.uniform[key].length[0]}]`] = fsTod.uniform[key].length[0];
+                for (const key in fsTod.uniform)
+                    if (!uniformMapEx[key]) {
+                        if (fsTod.uniform[key].length && fsTod.uniform[key].length[0]) {
+                            uniformMapEx[key] = {
+                                name: `${key}[${vsTod.uniform[key].length[0]}]`,
+                                type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
+                            };
+                            arrayMap[key] = vsTod.uniform[key].length[0];
+                        } else uniformMapEx[key] = {
+                            name: key,
+                            type: this.getAttributeS2T(fsTod.uniform[key].type) as ShaderDataType
                         }
-                        else uniformMap[key] = this.getAttributeS2T(fsTod.uniform[key].type) as ShaderDataType;
                     }
-                }
             if (fsTod.varying)
                 for (const key in fsTod.varying)
                     if (!varyingMapFS[key])
@@ -703,7 +719,7 @@ mat4 inverse(mat4 m)
         const {
             uniformGLSL,
             uniformInfo,
-            textureUniforms } = this.uniformString(uniformMap, arrayMap);
+            textureUniforms } = this.uniformString(uniformMapEx, arrayMap);
         const inverseFunc = this.genInverseFunc();
         const aWorldMat = this.genAWorldMat();
 

@@ -1,3 +1,4 @@
+import { roundDown, roundUp } from "./WebGPUCommon";
 import { WebGPURenderEngine } from "./WebGPURenderEngine";
 import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
 
@@ -31,7 +32,7 @@ export class WebGPUBuffer {
     objectName: string = 'WebGPUBuffer';
 
     constructor(usage: GPUBufferUsageFlags, byteSize: number = 0, mappedAtCreation: boolean = false) {
-        this._size = byteSize;
+        this._size = roundUp(byteSize, 4);
         this._usage = usage;
         this._mappedAtCreation = mappedAtCreation;
         if (this._size > 0)
@@ -43,7 +44,7 @@ export class WebGPUBuffer {
      * @param length 
      */
     setDataLength(length: number): void {
-        this._size = length;
+        this._size = roundUp(length, 4);
         this._create();
     }
 
@@ -73,7 +74,8 @@ export class WebGPUBuffer {
     setData(srcData: ArrayBuffer | ArrayBufferView, offset: number) {
         if ((srcData as ArrayBufferView).buffer)
             srcData = (srcData as ArrayBufferView).buffer;
-        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, 0, srcData, offset, srcData.byteLength);
+        const size = roundDown(srcData.byteLength - offset, 4);
+        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, 0, srcData, offset, size);
     }
 
     setDataEx(srcData: ArrayBuffer | ArrayBufferView, offset: number, bytelength: number, dstOffset: number = 0) {

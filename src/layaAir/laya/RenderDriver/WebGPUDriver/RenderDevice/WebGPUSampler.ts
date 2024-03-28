@@ -78,6 +78,8 @@ export class WebGPUSampler {
 
     private _createGPUSampler(params: WebGPUSamplerParams): GPUSampler {
         this._descriptor = this._getSamplerDescriptor(params);
+        if (this._descriptor.maxAnisotropy < 1)
+            this._descriptor.maxAnisotropy = 1;
         return WebGPURenderEngine._instance.getDevice().createSampler(this._descriptor);
     }
 

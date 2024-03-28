@@ -11,11 +11,8 @@ import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
 export class WebGPUShaderInstance implements IShaderInstance {
     static idCounter: number = 0;
     _id: number = WebGPUShaderInstance.idCounter++;
-    /**@internal */
     _shaderPass: ShaderPass;
-    /**@internal */
     private _vsShader: GPUShaderModule;
-    /**@internal */
     private _fsShader: GPUShaderModule;
 
     destroyed: boolean = false;
@@ -32,9 +29,6 @@ export class WebGPUShaderInstance implements IShaderInstance {
     globalId: number;
     objectName: string = 'WebGPUShaderInstance';
 
-    /**
-     * 创建一个 <code>WebGPUShaderInstance</code> 实例
-     */
     constructor(name: string) {
         this.name = name;
         this.globalId = WebGPUGlobal.getId(this);
