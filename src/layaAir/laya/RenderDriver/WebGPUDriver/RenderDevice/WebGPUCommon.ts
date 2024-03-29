@@ -32,6 +32,16 @@ export function roundUp(n: number, align: number) {
     return (((n + align - 1) / align) | 0) * align;
 }
 
+/**
+ * 向下圆整到align的整数倍
+ * @param n 
+ * @param align 
+ */
+export function roundDown(n: number, align: number) {
+    const res = (((n + align - 1) / align) | 0) * align;
+    return res > n ? res - align : res;
+}
+
 // TODO: fix better?
 export const isTypedArray = (arr: any) =>
     arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';

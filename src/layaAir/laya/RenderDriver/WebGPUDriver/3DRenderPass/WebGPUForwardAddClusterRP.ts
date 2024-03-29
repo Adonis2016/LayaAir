@@ -22,8 +22,10 @@ export class WebGPUForwardAddClusterRP extends ForwardAddClusterRP {
         if (this.skyRenderNode) {
             context.setClearData(RenderClearFlag.Depth, this.clearColor, 1, 0);
             const skyRenderElement = this.skyRenderNode.renderelements[0] as IRenderElement3D;
-            context.drawRenderElementOne(skyRenderElement);
-            this.clearFlag = RenderClearFlag.Depth | RenderClearFlag.Stencil;
+            if (skyRenderElement.subShader) {
+                context.drawRenderElementOne(skyRenderElement);
+                this.clearFlag = RenderClearFlag.Depth | RenderClearFlag.Stencil;
+            } else this.clearFlag = RenderClearFlag.Color | RenderClearFlag.Depth | RenderClearFlag.Stencil;
         } else this.clearFlag = RenderClearFlag.Color | RenderClearFlag.Depth | RenderClearFlag.Stencil;
 
         context.setClearData(this.clearFlag, this.clearColor, 1, 0);

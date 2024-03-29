@@ -104,7 +104,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
             if (this.renderShaderData)
                 comDef.addDefineDatas(this.renderShaderData.getDefineData());
             comDef.addDefineDatas(this.materialShaderData._defineDatas);
-            pass.nodeCommonMap = this.owner ? this.owner._commonUniformMap : null;
+            //pass.nodeCommonMap = this.owner ? this.owner._commonUniformMap : null;
 
             //获取shaderInstance，会先查找缓存，如果没有则创建
             const shaderInstance = pass.withCompile(comDef) as WebGPUShaderInstance;

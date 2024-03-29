@@ -37,6 +37,9 @@ import { SkyDome } from "laya/d3/resource/models/SkyDome";
 import { MeshAddTangent } from "laya/RenderDriver/WebGPUDriver/RenderDevice/Utils/MeshEditor";
 import { RenderTargetFormat } from "laya/RenderEngine/RenderEnum/RenderTargetFormat";
 import { BlinnPhongMaterial } from "laya/d3/core/material/BlinnPhongMaterial";
+import { Material } from "laya/resource/Material";
+import { SkyRenderer } from "laya/d3/resource/models/SkyRenderer";
+import { SkyBoxMaterial } from "laya/d3/core/material/SkyBoxMaterial";
 
 export class WebGPUTest_PBR2 {
     useWebGPU: boolean = true;
@@ -67,12 +70,24 @@ export class WebGPUTest_PBR2 {
 
             const scene: Scene3D = (<Scene3D>Laya.stage.addChild(new Scene3D()));
 
-            //初始化天空渲染器
-            const skyRenderer = scene.skyRenderer;
-            //创建天空盒mesh
-            skyRenderer.mesh = SkyDome.instance;
-            //使用程序化天空盒
-            skyRenderer.material = new SkyProceduralMaterial();
+            // //初始化天空渲染器
+            // const skyRenderer = scene.skyRenderer;
+            // //创建天空盒mesh
+            // skyRenderer.mesh = SkyDome.instance;
+            // //使用程序化天空盒
+            // skyRenderer.material = new SkyProceduralMaterial();
+
+            //天空盒
+			Material.load("sample-resource/res/threeDimen/skyBox/DawnDusk/SkyBox.lmat", Handler.create(this, (mat: SkyBoxMaterial) => {
+				//获取相机的天空渲染器
+				const skyRenderer = scene.skyRenderer;
+				//创建天空盒的mesh
+				skyRenderer.mesh = SkyDome.instance;
+				// 设置曝光值
+				mat.exposure = 1;
+				//设置天空盒材质
+				skyRenderer.material = mat;
+			}));
 
             const camera = (<Camera>(scene.addChild(new Camera(0, 0.1, 300))));
             camera.transform.translate(new Vector3(0, 0, 5));
