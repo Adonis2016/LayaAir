@@ -4,6 +4,8 @@ import { IShaderInstance } from "../../DriverDesign/RenderDevice/IShaderInstance
 import { WebGPURenderEngine } from "./WebGPURenderEngine";
 import { WebGPUBindingInfoType, WebGPUCodeGenerator, WebGPUUniformPropertyBindingInfo } from "./WebGPUCodeGenerator";
 import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
+import { LayaGL } from "../../../layagl/LayaGL";
+import { WebGLCommandUniformMap } from "../../WebGLDriver/RenderDevice/WebGLCommandUniformMap";
 
 /**
  * WebGPU着色器实例
@@ -167,6 +169,18 @@ export class WebGPUShaderInstance implements IShaderInstance {
         }
 
         return device.createPipelineLayout({ label: name, bindGroupLayouts });
+    }
+
+    private _hasSpritePtrID(dataOffset: number): boolean {
+        const commap = this._shaderPass.nodeCommonMap;
+        if (!commap)
+            return false;
+        else {
+            for (let i = 0, n = commap.length; i < n; i++)
+                if ((LayaGL.renderDeviceFactory.createGlobalUniformMap(commap[i]) as WebGLCommandUniformMap).hasPtrID(dataOffset))
+                    return true;
+            return false;
+        }
     }
 
     _disposeResource(): void {

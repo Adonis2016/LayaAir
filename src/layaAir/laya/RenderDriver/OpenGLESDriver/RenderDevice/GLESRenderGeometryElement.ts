@@ -5,88 +5,87 @@ import { MeshTopology } from "../../../RenderEngine/RenderEnum/RenderPologyMode"
 import { SingletonList } from "../../../utils/SingletonList";
 import { IBufferState } from "../../DriverDesign/RenderDevice/IBufferState";
 
-
-
 export class GLESRenderGeometryElement implements IRenderGeometryElement {
-  /**@internal */
-  private _bufferState: IBufferState;
+    /**@internal */
+    private _bufferState: IBufferState;
 
-  /**@internal */
-  drawParams: SingletonList<number>;
+    /**@internal */
+    drawParams: SingletonList<number>;
 
-  _nativeObj: any;
+    _nativeObj: any;
 
-  /**@internal */
-  constructor(mode: MeshTopology, drawType: DrawType) {
-    this._nativeObj = new (window as any).conchGLESRenderGeometryElement();
-    this.mode = mode;
-    this.drawParams = new SingletonList();
-    this.drawType = drawType;
-  }
+    _id: number;
 
-  /**@internal */
-  setDrawArrayParams(first: number, count: number): void {
-    this.drawParams.add(first);
-    this.drawParams.add(count);
-    this._nativeObj.setDrawArrayParams(first, count);
-  }
+    /**@internal */
+    constructor(mode: MeshTopology, drawType: DrawType) {
+        this._nativeObj = new (window as any).conchGLESRenderGeometryElement();
+        this.mode = mode;
+        this.drawParams = new SingletonList();
+        this.drawType = drawType;
+    }
 
-  /**@internal */
-  setDrawElemenParams(count: number, offset: number): void {
-    this.drawParams.add(offset);
-    this.drawParams.add(count);
-    this._nativeObj.setDrawElementParams(count, offset);
-  }
+    /**@internal */
+    setDrawArrayParams(first: number, count: number): void {
+        this.drawParams.add(first);
+        this.drawParams.add(count);
+        this._nativeObj.setDrawArrayParams(first, count);
+    }
 
-  /**@internal */
-  destroy(): void {
-    this._nativeObj.destroy();
-  }
+    /**@internal */
+    setDrawElemenParams(count: number, offset: number): void {
+        this.drawParams.add(offset);
+        this.drawParams.add(count);
+        this._nativeObj.setDrawElementParams(count, offset);
+    }
 
-  clearRenderParams() {
-    this.drawParams.length = 0;
-    this._nativeObj.clearRenderParams();
-  }
+    /**@internal */
+    destroy(): void {
+        this._nativeObj.destroy();
+    }
 
-  set bufferState(value: IBufferState) {
-    this._bufferState = value;
-    this._nativeObj.setBufferState(value ? (value as any)._nativeObj : null);
-  }
+    clearRenderParams() {
+        this.drawParams.length = 0;
+        this._nativeObj.clearRenderParams();
+    }
 
-  get bufferState(): IBufferState {
-    return this._bufferState;
-  }
+    set bufferState(value: IBufferState) {
+        this._bufferState = value;
+        this._nativeObj.setBufferState(value ? (value as any)._nativeObj : null);
+    }
 
-  set mode(value: MeshTopology) {
-    this._nativeObj.mode = value;
-  }
+    get bufferState(): IBufferState {
+        return this._bufferState;
+    }
 
-  get mode(): MeshTopology {
-    return this._nativeObj.mode;
-  }
+    set mode(value: MeshTopology) {
+        this._nativeObj.mode = value;
+    }
 
-  set drawType(value: DrawType) {
-    this._nativeObj.drawType = value;
-  }
+    get mode(): MeshTopology {
+        return this._nativeObj.mode;
+    }
 
-  get drawType(): DrawType {
-    return this._nativeObj.drawType;
-  }
+    set drawType(value: DrawType) {
+        this._nativeObj.drawType = value;
+    }
 
-  set instanceCount(value: number) {
-    this._nativeObj.instanceCount = value;
-  }
+    get drawType(): DrawType {
+        return this._nativeObj.drawType;
+    }
 
-  get instanceCount(): number {
-    return this._nativeObj.instanceCount;
-  }
+    set instanceCount(value: number) {
+        this._nativeObj.instanceCount = value;
+    }
 
-  set indexFormat(value: IndexFormat) {
-    this._nativeObj.indexFormat = value;
-  }
+    get instanceCount(): number {
+        return this._nativeObj.instanceCount;
+    }
 
-  get indexFormat(): IndexFormat {
-    return this._nativeObj.indexFormat;
-  }
-  
+    set indexFormat(value: IndexFormat) {
+        this._nativeObj.indexFormat = value;
+    }
+
+    get indexFormat(): IndexFormat {
+        return this._nativeObj.indexFormat;
+    }
 }

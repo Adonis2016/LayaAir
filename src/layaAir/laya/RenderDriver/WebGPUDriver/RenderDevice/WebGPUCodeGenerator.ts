@@ -164,11 +164,6 @@ export class WebGPUCodeGenerator {
                 materialUniforms.push({ name, type, set: 3 });
         }
 
-        if (sprite3DUniforms.length === 0)
-            sprite3DUniforms.push({ name: 'u_WorldMat', type: 'mat4', set: 2 });
-        if (materialUniforms.length === 0)
-            materialUniforms.push({ name: 'u_AlbedoColor', type: 'vec4', set: 3 });
-
         for (const key in uniformMap) {
             if (typeof uniformMap[key] === "object") { //block
                 const blockUniforms = <{ [name: string]: ShaderDataType }>uniformMap[key];
@@ -182,6 +177,11 @@ export class WebGPUCodeGenerator {
                 _catalog(key, dataType);
             }
         }
+
+        if (sprite3DUniforms.length === 0)
+            sprite3DUniforms.push({ name: 'u_WorldMat', type: 'mat4', set: 2 });
+        if (materialUniforms.length === 0)
+            materialUniforms.push({ name: 'u_AlbedoColor', type: 'vec4', set: 3 });
 
         let uniformGLSL = '';
         const typeNum = 10;

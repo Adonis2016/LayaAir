@@ -88,9 +88,9 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
 
         const comDef = WebGPURenderElement3D._compileDefine;
         //将场景或全局配置的定义一次性准备好
-        if (context.sceneData) {
+        if (context.sceneData)
             context.sceneData._defineDatas.cloneTo(comDef);
-        } else context.globalConfigShaderData.cloneTo(comDef);
+        else context.globalConfigShaderData.cloneTo(comDef);
 
         //添加相机数据定义
         if (context.cameraData)

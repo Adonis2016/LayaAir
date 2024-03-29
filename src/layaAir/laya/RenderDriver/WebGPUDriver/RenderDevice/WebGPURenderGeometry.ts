@@ -50,7 +50,7 @@ export class WebGPURenderGeometry implements IRenderGeometryElement {
     /**@internal */
     drawType: DrawType;
 
-    private _id: number;
+    _id: number;
     static _idCounter: number = 0;
 
     get instanceCount(): number {
