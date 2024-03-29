@@ -6,6 +6,7 @@ import { ISceneRenderManager } from "../../DriverDesign/3DRenderPass/ISceneRende
 import { WebGPU3DRenderPass } from "./WebGPU3DRenderPass";
 import { WebGPURenderContext3D } from "./WebGPURenderContext3D";
 import { WebGPURenderElement3D } from "./WebGPURenderElement3D";
+import { WebGPUSkinRenderElement3D } from "./WebGPUSkinRenderElement3D";
 
 export class WebGPU3DRenderPassFactory implements I3DRenderPassFactory {
     createRender3DProcess(): IRender3DProcess {
@@ -18,7 +19,7 @@ export class WebGPU3DRenderPassFactory implements I3DRenderPassFactory {
         return new WebGPURenderElement3D();
     }
     createSkinRenderElement(): IRenderElement3D {
-        return null;//TODO
+        return new WebGPUSkinRenderElement3D();
     }
     createSkyRenderElement(): ISkyRenderElement3D {
         return null;//TODO

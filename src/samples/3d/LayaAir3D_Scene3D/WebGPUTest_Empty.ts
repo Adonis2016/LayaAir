@@ -45,7 +45,6 @@ import { Event } from "laya/events/Event";
 import { AmbientMode } from "laya/d3/core/scene/AmbientMode";
 import { Animator } from "laya/d3/component/Animator/Animator";
 import { URL } from "laya/net/URL";
-import { MeshSprite3D } from "laya/d3/core/MeshSprite3D";
 import { EffectMaterial } from "laya/d3/core/material/EffectMaterial";
 import { Texture2D } from "laya/resource/Texture2D";
 import { Mesh } from "laya/d3/resource/models/Mesh";
@@ -55,18 +54,17 @@ import { PointLightCom } from "laya/d3/core/light/PointLightCom";
 import { SpotLightCom } from "laya/d3/core/light/SpotLightCom";
 
 class LightMoveScript extends Script {
-    forward: Vector3 = new Vector3();
     lights: Sprite3D[] = [];
     offsets: Vector3[] = [];
     moveRanges: Vector3[] = [];
 
     onUpdate(): void {
-        var seed: number = Laya.timer.currTimer * 0.002;
-        for (var i: number = 0, n: number = this.lights.length; i < n; i++) {
-            var transform = this.lights[i].transform;
-            var pos: Vector3 = transform.localPosition;
-            var off: Vector3 = this.offsets[i];
-            var ran: Vector3 = this.moveRanges[i];
+        const seed = Laya.timer.currTimer * 0.002;
+        for (let i = 0, n = this.lights.length; i < n; i++) {
+            const transform = this.lights[i].transform;
+            const pos = transform.localPosition;
+            const off = this.offsets[i];
+            const ran = this.moveRanges[i];
             pos.x = off.x + Math.sin(seed) * ran.x;
             pos.y = off.y + Math.sin(seed) * ran.y;
             pos.z = off.z + Math.sin(seed) * ran.z;
@@ -75,45 +73,40 @@ class LightMoveScript extends Script {
     }
 }
 
-/**
- * model rotation script.
- */
 class RotationScript extends Script {
     private _lastMouseX: number;
     private _mouseDown: boolean = false;
     private _rotate: Vector3 = new Vector3();
     private _autoRotateSpeed: Vector3 = new Vector3(0, 0.25, 0);
-
     model: Sprite3D;
 
     constructor() {
         super();
-        Laya.stage.on(Event.MOUSE_DOWN, this, function (): void {
+        Laya.stage.on(Event.MOUSE_DOWN, this, () => {
             this._mouseDown = true;
             this._lastMouseX = Laya.stage.mouseX;
         });
-        Laya.stage.on(Event.MOUSE_UP, this, function (): void {
+        Laya.stage.on(Event.MOUSE_UP, this, () => {
             this._mouseDown = false;
         });
 
     }
+
     onUpdate(): void {
         if (this._mouseDown) {
-            var deltaX: number = Laya.stage.mouseX - this._lastMouseX;
+            const deltaX = Laya.stage.mouseX - this._lastMouseX;
             this._rotate.y = deltaX * 0.2;
             this.model.transform.rotate(this._rotate, false, false);
             this._lastMouseX = Laya.stage.mouseX;
         }
-        else {
-            this.model.transform.rotate(this._autoRotateSpeed, false, false);
-        }
+        else this.model.transform.rotate(this._autoRotateSpeed, false, false);
     }
 }
 
 export class WebGPUTest_Empty {
-    useWebGPU: boolean = false;
+    useWebGPU: boolean = true;
     usePBR: boolean = true;
-    private rotation: Vector3 = new Vector3(0, 0.01, 0);
+    private _rotation: Vector3 = new Vector3(0, 0.01, 0);
     private _temp_position: Vector3 = new Vector3();
     private _temp_quaternion: Quaternion = new Quaternion();
 
@@ -181,31 +174,31 @@ export class WebGPUTest_Empty {
             dirCom.color.setValue(1, 1, 1, 1);
 
             //创建点光源
-            const pointLight = new Sprite3D();
-            const pointCom = pointLight.addComponent(PointLightCom);
-            scene.addChild(pointLight);
-            pointCom.color = new Color(1, 0.5, 0, 1);
-            pointCom.range = 3;
-            pointLight.transform.position = new Vector3(0.4, 0.4, 0);
+            // const pointLight = new Sprite3D();
+            // const pointCom = pointLight.addComponent(PointLightCom);
+            // scene.addChild(pointLight);
+            // pointCom.color = new Color(1, 0.5, 0, 1);
+            // pointCom.range = 3;
+            // pointLight.transform.position = new Vector3(0.4, 0.4, 0);
 
-            // //打开后处理
-            // // if (true) {
-            // //     const postProcess = new PostProcess();
-            // //     const bloom = new BloomEffect();
-            // //     postProcess.addEffect(bloom);
-            // //     camera.postProcess = postProcess;
-            // //     camera.enableHDR = true;
+            //打开后处理
+            if (true) {
+                const postProcess = new PostProcess();
+                const bloom = new BloomEffect();
+                postProcess.addEffect(bloom);
+                camera.postProcess = postProcess;
+                camera.enableHDR = true;
 
-            // //     //设置泛光参数
-            // //     bloom.intensity = 5;
-            // //     bloom.threshold = 0.9;
-            // //     bloom.softKnee = 0.5;
-            // //     bloom.clamp = 65472;
-            // //     bloom.diffusion = 5;
-            // //     bloom.anamorphicRatio = 0.0;
-            // //     bloom.color = new Color(1, 1, 1, 1);
-            // //     bloom.fastMode = true;
-            // // }
+                //设置泛光参数
+                bloom.intensity = 5;
+                bloom.threshold = 0.9;
+                bloom.softKnee = 0.5;
+                bloom.clamp = 65472;
+                bloom.diffusion = 5;
+                bloom.anamorphicRatio = 0.0;
+                bloom.color = new Color(1, 1, 1, 1);
+                bloom.fastMode = true;
+            }
 
             // 演示头盔模型
             // Scene3D.load("res/threeDimen/scene/LayaScene_DamagedHelmetScene/Conventional/DamagedHelmetScene.ls", Handler.create(this, (scene: Scene3D) => {
@@ -247,7 +240,7 @@ export class WebGPUTest_Empty {
             //     material.texture = texture; //设置纹理
             // }));
             // Laya.timer.frameLoop(1, this, () => {
-            //     earth.transform.rotate(this.rotation, false);
+            //     earth.transform.rotate(this._rotation, false);
             // });
 
             // 水面颜色（没有成功）
@@ -258,19 +251,19 @@ export class WebGPUTest_Empty {
             // }));
 
             // 加载Laya猴子模型
-            // Mesh.load("res/threeDimen/skinModel/LayaMonkey/Assets/LayaMonkey/LayaMonkey-LayaMonkey.lm", Handler.create(this, (mesh: Mesh) => {
-            //     const layaMonkey = (<Sprite3D>scene.addChild(new Sprite3D()));
-            //     const meshRenderer = layaMonkey.addComponent(MeshRenderer);
-            //     layaMonkey.addComponent(MeshFilter).sharedMesh = mesh;
-            //     layaMonkey.transform.localScale = new Vector3(0.3, 0.3, 0.3);
-            //     layaMonkey.transform.rotation = new Quaternion(0.7071, 0, 0, -0.7071);
-            //     Material.load("res/threeDimen/skinModel/LayaMonkey/Assets/LayaMonkey/Materials/T_Diffuse.lmat", Handler.create(this, (mat: Material) => {
-            //         meshRenderer.material = mat;
-            //     }));
-            //     Laya.timer.frameLoop(1, this, () => {
-            //         layaMonkey.transform.rotate(this.rotation, false);
-            //     });
-            // }));
+            Mesh.load("res/threeDimen/skinModel/LayaMonkey/Assets/LayaMonkey/LayaMonkey-LayaMonkey.lm", Handler.create(this, (mesh: Mesh) => {
+                const layaMonkey = (<Sprite3D>scene.addChild(new Sprite3D()));
+                const meshRenderer = layaMonkey.addComponent(MeshRenderer);
+                layaMonkey.addComponent(MeshFilter).sharedMesh = mesh;
+                layaMonkey.transform.localScale = new Vector3(0.3, 0.3, 0.3);
+                layaMonkey.transform.rotation = new Quaternion(0.7071, 0, 0, -0.7071);
+                Material.load("res/threeDimen/skinModel/LayaMonkey/Assets/LayaMonkey/Materials/T_Diffuse.lmat", Handler.create(this, (mat: Material) => {
+                    meshRenderer.material = mat;
+                }));
+                Laya.timer.frameLoop(1, this, () => {
+                    layaMonkey.transform.rotate(this._rotation, false);
+                });
+            }));
 
             // 演示多灯光效果（没有成功）
             // Scene3D.load("res/threeDimen/scene/MultiLightScene/InventoryScene_Forest.ls", Handler.create(this, (scene: Scene3D) => {
@@ -309,24 +302,24 @@ export class WebGPUTest_Empty {
             //     spotCom.spotAngle = 60;
             // }));
 
-            // 演示骨骼动画
-            Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
-                //地面
-                scene.addChild(sprite);
-                //猴子
-                Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
-                    scene.addChild(layaMonkey);
-                    layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
-                    //设置时钟定时执行
-                    Laya.timer.frameLoop(1, this, () => {
-                        //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
-                        Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
-                        //根据四元数旋转三维向量
-                        Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
-                        pointLight.transform.position = this._temp_position;
-                    });
-                }));
-            }));
+            // 演示骨骼动画（没有成功）
+            // Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
+            //     //地面
+            //     scene.addChild(sprite);
+            //     //猴子
+            //     Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey_noShadow.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
+            //         scene.addChild(layaMonkey);
+            //         layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
+            //         //设置时钟定时执行
+            //         Laya.timer.frameLoop(1, this, () => {
+            //             //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
+            //             Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
+            //             //根据四元数旋转三维向量
+            //             //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
+            //             //pointLight.transform.position = this._temp_position;
+            //         });
+            //     }));
+            // }));
         });
     }
 }

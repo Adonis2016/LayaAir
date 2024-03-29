@@ -311,7 +311,7 @@ export class WebGPUCodeGenerator {
      * 去除naga转译报错的代码
      */
     static changeUnfitCode(code: string) {
-        const regex1 = /const\s+(?:in|highp|mediump|lowp)\s*/g;
+        const regex1 = /const\s+(?:in|highp|mediump|lowp)\s+/g;
         code = code.replace(regex1, 'in ');
         const regex2 = /(?:texture2D|textureCube)\s*\(\s*/g;
         return code.replace(regex2, 'texture(');
@@ -783,6 +783,9 @@ ${textureGLSL_fs}
         const wgsl_fs = this.naga.compileGLSL2WGSL(dstFS, 'fragment');
         //console.log(wgsl_vs);
         //console.log(wgsl_fs);
+
+        //const wgsl_vs2 = (wgsl_vs as string).replace('a_BoneIndices: vec4<f32>', 'a_BoneIndices: vec4<u32>');
+        //const wgsl_vs3 = (wgsl_vs2 as string).replace('var<private> a_BoneIndices_1: vec4<f32>', 'var<private> a_BoneIndices_1: vec4<u32>');
 
         return { vs: wgsl_vs, fs: wgsl_fs, uniformInfo };
     }

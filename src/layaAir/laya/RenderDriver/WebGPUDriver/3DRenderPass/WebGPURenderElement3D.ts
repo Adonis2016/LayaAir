@@ -49,7 +49,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
 
     private _stateKey: string[] = []; //用于判断渲染状态是否改变
     private _stateKeyCounter: number = 0; //用于控制stateKey计算频率
-    private _shaderInstances: WebGPUShaderInstance[] = []; //着色器缓存
+    protected _shaderInstances: WebGPUShaderInstance[] = []; //着色器缓存
     private _pipelineCache: GPURenderPipeline[] = []; //渲染管线缓存
 
     //是否启用GPU资源缓存机制
