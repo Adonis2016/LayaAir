@@ -136,7 +136,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
         return `${shaderInstance._id}_${primitiveState.key}_${this.blendState.key}_${depthStencilId}_${dest.formatId}_${bufferState.id}_${bufferState.updateBufferLayoutFlag}`;
     }
 
-    private _getWebGPURenderPipeline(shaderInstance: WebGPUShaderInstance,
+    protected _getWebGPURenderPipeline(shaderInstance: WebGPUShaderInstance,
         dest: WebGPUInternalRT, context: WebGPURenderContext3D, entries: any): GPURenderPipeline {
         this._getBlendState(shaderInstance);
         this._getDepthStencilState(shaderInstance, dest);
@@ -411,7 +411,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
      * @param bundle 
      * @param stateKey 
      */
-    _createPipeline(sn: number, context: WebGPURenderContext3D, shaderInstance: WebGPUShaderInstance,
+    protected _createPipeline(sn: number, context: WebGPURenderContext3D, shaderInstance: WebGPUShaderInstance,
         command: WebGPURenderCommandEncoder, bundle: WebGPURenderBundle, stateKey?: string) {
         let complete = true;
         let entries: GPUBindGroupLayoutEntry[];

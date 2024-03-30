@@ -62,6 +62,16 @@ export class WebGPUContext {
         } else bundle.applyGeometry(geometry, false);
     }
 
+    static applyBundleGeometryPart(bundle: WebGPURenderBundle, geometry: WebGPURenderGeometry, part: number) {
+        if (this.lastBundle !== bundle || this.lastBundleGeometry !== geometry) {
+            bundle.applyGeometryPart(geometry, part, true);
+            if (this.lastBundle !== bundle)
+                this.clearLastBundle();
+            this.lastBundle = bundle;
+            this.lastBundleGeometry = geometry;
+        } else bundle.applyGeometryPart(geometry, part, false);
+    }
+
     static applyCommandGeometry(command: WebGPURenderCommandEncoder, geometry: WebGPURenderGeometry) {
         if (this.lastCommand !== command || this.lastCommandGeometry !== geometry) {
             command.applyGeometry(geometry, true);
@@ -70,5 +80,15 @@ export class WebGPUContext {
             this.lastCommand = command;
             this.lastCommandGeometry = geometry;
         } else command.applyGeometry(geometry, false);
+    }
+
+    static applyCommandGeometryPart(command: WebGPURenderCommandEncoder, geometry: WebGPURenderGeometry, part: number) {
+        if (this.lastCommand !== command || this.lastCommandGeometry !== geometry) {
+            command.applyGeometryPart(geometry, part, true);
+            if (this.lastCommand !== command)
+                this.clearLastCommand();
+            this.lastCommand = command;
+            this.lastCommandGeometry = geometry;
+        } else command.applyGeometryPart(geometry, part, false);
     }
 }

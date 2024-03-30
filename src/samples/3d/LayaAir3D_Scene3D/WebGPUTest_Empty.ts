@@ -224,8 +224,8 @@ export class WebGPUTest_Empty {
             // 	camera.addComponent(CameraMoveScript);
             // }));
 
-            // 演示胖子骨骼动画模型（没有成功）
-            // Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi.lh", Handler.create(this, (node: Sprite3D) => {
+            // 演示胖子骨骼动画模型
+            // Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi-noShadow.lh", Handler.create(this, (node: Sprite3D) => {
             //     scene.addChild(node);
             // }));
 
@@ -302,7 +302,7 @@ export class WebGPUTest_Empty {
             //     spotCom.spotAngle = 60;
             // }));
 
-            // 演示骨骼动画（没有成功）
+            // 演示骨骼动画
             Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
                 //地面
                 scene.addChild(sprite);
