@@ -27,7 +27,8 @@ export class InstanceRenderBatch {
 
         let invertFrontFaceFlag = invertFrontFace ? 1 : 0;
         let receiveShadowFlag = renderNode.receiveShadow ? 1 : 0;
-        let geometryFlag = geometry._id;
+        //let geometryFlag = geometry._id;
+        let geometryFlag = 0;
         let materialFlag = element.materialId;
 
         let renderId = (materialFlag << 17) + (geometryFlag << 2) + (invertFrontFaceFlag << 1) + (receiveShadowFlag);

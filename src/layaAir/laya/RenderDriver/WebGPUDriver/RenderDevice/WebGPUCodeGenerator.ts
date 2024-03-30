@@ -311,7 +311,7 @@ export class WebGPUCodeGenerator {
      * 去除naga转译报错的代码
      */
     static changeUnfitCode(code: string) {
-        const regex1 = /const\s+(?:in|highp|mediump|lowp)\s*/g;
+        const regex1 = /const\s+(?:in|highp|mediump|lowp)\s+/g;
         code = code.replace(regex1, 'in ');
         const regex2 = /(?:texture2D|textureCube)\s*\(\s*/g;
         return code.replace(regex2, 'texture(');

@@ -50,6 +50,8 @@ export class WebGPURenderGeometry implements IRenderGeometryElement {
     /**@internal */
     drawType: DrawType;
 
+    skinIndicesDone: boolean = false;
+
     _id: number;
     static _idCounter: number = 0;
 
