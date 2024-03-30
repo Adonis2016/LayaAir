@@ -29,8 +29,8 @@ import { WebGPURenderContext3D } from "./WebGPURenderContext3D";
 export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineInfo {
     static _compileDefine: WebDefineDatas = new WebDefineDatas();
 
-    private _sceneData: WebGPUShaderData;
-    private _cameraData: WebGPUShaderData;
+    protected _sceneData: WebGPUShaderData;
+    protected _cameraData: WebGPUShaderData;
     renderShaderData: WebGPUShaderData;
     materialShaderData: WebGPUShaderData;
     materialRenderQueue: number;
@@ -47,10 +47,10 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
     frontFace: FrontFace;
     private _invertFrontFace: boolean;
 
-    private _stateKey: string[] = []; //用于判断渲染状态是否改变
-    private _stateKeyCounter: number = 0; //用于控制stateKey计算频率
+    protected _stateKey: string[] = []; //用于判断渲染状态是否改变
+    protected _stateKeyCounter: number = 0; //用于控制stateKey计算频率
     protected _shaderInstances: WebGPUShaderInstance[] = []; //着色器缓存
-    private _pipelineCache: GPURenderPipeline[] = []; //渲染管线缓存
+    protected _pipelineCache: GPURenderPipeline[] = []; //渲染管线缓存
 
     //是否启用GPU资源缓存机制
     useCache: boolean = WebGPUGlobal.useCache;
@@ -126,7 +126,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
         this._stateKeyCounter = 0;
     }
 
-    private _calcStateKey(shaderInstance: WebGPUShaderInstance, dest: WebGPUInternalRT, context: WebGPURenderContext3D) {
+    protected _calcStateKey(shaderInstance: WebGPUShaderInstance, dest: WebGPUInternalRT, context: WebGPURenderContext3D) {
         this._getBlendState(shaderInstance);
         this._getDepthStencilState(shaderInstance, dest);
         this._getCullFrontMode(this.materialShaderData, shaderInstance, this._invertFrontFace, context.invertY);

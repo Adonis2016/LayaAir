@@ -74,7 +74,7 @@ export class WebGPUBuffer {
     setData(srcData: ArrayBuffer | ArrayBufferView, offset: number) {
         if ((srcData as ArrayBufferView).buffer)
             srcData = (srcData as ArrayBufferView).buffer;
-        const size = roundDown(srcData.byteLength - offset, 4);
+        const size = roundDown(srcData.byteLength - offset, 4); //这里需要进一步处理，目前是截断到4字节对齐，可能会导致数据不完整
         WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, 0, srcData, offset, size);
     }
 

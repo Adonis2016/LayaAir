@@ -9,6 +9,8 @@ export class WebGPUVertexBuffer implements IVertexBuffer {
     vertexDeclaration: VertexDeclaration;
     instanceBuffer: boolean;
 
+    buffer: ArrayBuffer;
+
     globalId: number;
     objectName: string = 'WebGPUVertexBuffer';
 
@@ -23,7 +25,11 @@ export class WebGPUVertexBuffer implements IVertexBuffer {
         if (needSubData) {
             const subData: Uint8Array = new Uint8Array(buffer, dataStartIndex, dataCount);
             this.source.setData(subData, bufferOffset);
-        } else this.source.setData(buffer, bufferOffset);
+            this.buffer = subData.buffer;
+        } else {
+            this.source.setData(buffer, bufferOffset);
+            this.buffer = buffer;
+        }
     }
 
     setDataLength(byteLength: number): void {

@@ -648,20 +648,23 @@ mat4 inverse(mat4 m)
             vsOut = WebGPUShaderCompileUtil.toScript(ret, defMap, vsTod);
             if (vsOut.indexOf('inverse') === -1)
                 vsNeedInverseFunc = false;
-            if (vsTod.uniform)
+            if (vsTod.uniform) {
+                let keyWithArray: string;
                 for (const key in vsTod.uniform)
                     if (!uniformMapEx[key]) {
                         if (vsTod.uniform[key].length && vsTod.uniform[key].length[0]) {
+                            keyWithArray = `${key}[${vsTod.uniform[key].length[0]}]`;
                             uniformMapEx[key] = {
-                                name: `${key}[${vsTod.uniform[key].length[0]}]`,
+                                name: keyWithArray,
                                 type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
                             };
-                            arrayMap[key] = vsTod.uniform[key].length[0];
+                            arrayMap[keyWithArray] = vsTod.uniform[key].length[0];
                         } else uniformMapEx[key] = {
                             name: key,
                             type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
                         }
                     }
+            }
             if (vsTod.varying)
                 for (const key in vsTod.varying)
                     if (!varyingMapVS[key])
@@ -687,20 +690,23 @@ mat4 inverse(mat4 m)
             fsOut = WebGPUShaderCompileUtil.toScript(ret, defMap, fsTod);
             if (fsOut.indexOf('inverse') === -1)
                 fsNeedInverseFunc = false;
-            if (fsTod.uniform)
+            if (fsTod.uniform) {
+                let keyWithArray: string;
                 for (const key in fsTod.uniform)
                     if (!uniformMapEx[key]) {
                         if (fsTod.uniform[key].length && fsTod.uniform[key].length[0]) {
+                            keyWithArray = `${key}[${vsTod.uniform[key].length[0]}]`;
                             uniformMapEx[key] = {
-                                name: `${key}[${vsTod.uniform[key].length[0]}]`,
+                                name: keyWithArray,
                                 type: this.getAttributeS2T(vsTod.uniform[key].type) as ShaderDataType
                             };
-                            arrayMap[key] = vsTod.uniform[key].length[0];
+                            arrayMap[keyWithArray] = vsTod.uniform[key].length[0];
                         } else uniformMapEx[key] = {
                             name: key,
                             type: this.getAttributeS2T(fsTod.uniform[key].type) as ShaderDataType
                         }
                     }
+            }
             if (fsTod.varying)
                 for (const key in fsTod.varying)
                     if (!varyingMapFS[key])
