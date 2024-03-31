@@ -8,6 +8,7 @@ import { RenderState } from "../../RenderModuleData/Design/RenderState";
 import { WebBaseRenderNode } from "../../RenderModuleData/WebModuleData/3D/WebBaseRenderNode";
 import { WebDefineDatas } from "../../RenderModuleData/WebModuleData/WebDefineDatas";
 import { WebGPURenderBundle } from "../RenderDevice/WebGPUBundle/WebGPURenderBundle";
+import { WebGPUBindingInfoType, WebGPUUniformPropertyBindingInfo } from "../RenderDevice/WebGPUCodeGenerator";
 import { WebGPUInternalRT } from "../RenderDevice/WebGPUInternalRT";
 import { WebGPURenderCommandEncoder } from "../RenderDevice/WebGPURenderCommandEncoder";
 import { WebGPURenderGeometry } from "../RenderDevice/WebGPURenderGeometry";
@@ -56,7 +57,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
     useCache: boolean = WebGPUGlobal.useCache;
 
     //着色器数据状态，如果状态改变了，说明需要重建资源，否则直接使用缓存
-    private _shaderDataState: number[] = [];
+    protected _shaderDataState: number[] = [];
 
     bundleId: number; //用于bundle管理（被bundle管理器识别）
     needClearBundle: boolean = false; //是否需要清除bundle（bindGroup，pipeline等改变都需要清除指令缓存）
@@ -372,7 +373,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
     /**
      * 着色器数据是否改变
      */
-    private _isShaderDataChange() {
+    protected _isShaderDataChange() {
         let change = false;
         const shaderDataState = this._shaderDataState;
         if (this._sceneData) {
@@ -403,6 +404,83 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
     }
 
     /**
+     * 创建绑定组布局
+     * @param shaderInstance 
+     */
+    protected _createBindGroupLayout(shaderInstance: WebGPUShaderInstance) {
+        let entries: GPUBindGroupLayoutEntry[];
+        const bindGroupLayout = [];
+        const shaderData = [];
+        shaderData[0] = this._sceneData;
+        shaderData[1] = this._cameraData;
+        shaderData[2] = this.renderShaderData;
+        shaderData[3] = this.materialShaderData;
+        const uniformSetMap = shaderInstance.uniformSetMap;
+
+        for (let i = 0; i < 4; i++) {
+            if (shaderData[i]) {
+                entries = shaderData[i].createBindGroupLayoutEntry(uniformSetMap[i]);
+                if (!entries) return null;
+                bindGroupLayout.push(entries);
+            }
+        }
+        return bindGroupLayout;
+    }
+
+    /**
+     * 绑定资源组
+     * @param shaderInstance 
+     * @param command 
+     * @param bundle 
+     */
+    protected _bindGroup(shaderInstance: WebGPUShaderInstance, command: WebGPURenderCommandEncoder, bundle: WebGPURenderBundle) {
+        const sceneData = this._sceneData;
+        const cameraData = this._cameraData;
+        const renderShaderData = this.renderShaderData;
+        const materialShaderData = this.materialShaderData;
+        const uniformSetMap = shaderInstance.uniformSetMap;
+
+        if (sceneData)
+            sceneData.bindGroup(0, 'scene3D', uniformSetMap[0], command, bundle);
+        if (cameraData)
+            cameraData.bindGroup(1, 'camera', uniformSetMap[1], command, bundle);
+        if (renderShaderData)
+            renderShaderData.bindGroup(2, 'sprite3D', uniformSetMap[2], command, bundle);
+        if (materialShaderData)
+            materialShaderData.bindGroup(3, 'material', uniformSetMap[3], command, bundle);
+    }
+
+    /**
+     * 上传uniform数据
+     */
+    protected _uploadUniform() {
+        if (this._sceneData)
+            this._sceneData.uploadUniform();
+        if (this._cameraData)
+            this._cameraData.uploadUniform();
+        if (this.renderShaderData)
+            this.renderShaderData.uploadUniform();
+        if (this.materialShaderData)
+            this.materialShaderData.uploadUniform();
+    }
+
+    /**
+     * 上传几何数据
+     */
+    protected _uploadGeometry(command: WebGPURenderCommandEncoder, bundle: WebGPURenderBundle) {
+        if (command) {
+            if (WebGPUGlobal.useGlobalContext)
+                WebGPUContext.applyCommandGeometryPart(command, this.geometry, 0);
+            else command.applyGeometryPart(this.geometry, 0);
+        }
+        if (bundle) {
+            if (WebGPUGlobal.useGlobalContext)
+                WebGPUContext.applyBundleGeometryPart(bundle, this.geometry, 0);
+            else bundle.applyGeometryPart(this.geometry, 0);
+        }
+    }
+
+    /**
      * 用于创建渲染管线的函数
      * @param sn 
      * @param context 
@@ -413,80 +491,29 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
      */
     protected _createPipeline(sn: number, context: WebGPURenderContext3D, shaderInstance: WebGPUShaderInstance,
         command: WebGPURenderCommandEncoder, bundle: WebGPURenderBundle, stateKey?: string) {
-        let complete = true;
-        let entries: GPUBindGroupLayoutEntry[];
-        const bindGroupLayout = [];
-        const sceneData = this._sceneData;
-        const cameraData = this._cameraData;
-        const renderShaderData = this.renderShaderData;
-        const materialShaderData = this.materialShaderData;
-        const uniformSetMap = shaderInstance.uniformSetMap;
-
-        if (sceneData) {
-            entries = sceneData.bindGroup(0, 'scene3D', uniformSetMap[0], command, bundle);
-            if (!entries)
-                complete = false;
-            else {
-                sceneData.uploadUniform();
-                bindGroupLayout.push(entries);
-            }
-        }
-        if (cameraData) {
-            entries = cameraData.bindGroup(1, 'camera', uniformSetMap[1], command, bundle);
-            if (!entries)
-                complete = false;
-            else {
-                cameraData.uploadUniform();
-                bindGroupLayout.push(entries);
-            }
-        }
-        if (renderShaderData) {
-            renderShaderData.isShare = false;
-            entries = renderShaderData.bindGroup(2, 'sprite3D', uniformSetMap[2], command, bundle);
-            if (!entries)
-                complete = false;
-            else {
-                renderShaderData.uploadUniform();
-                bindGroupLayout.push(entries);
-            }
-        }
-        if (materialShaderData) {
-            materialShaderData.isShare = false;
-            entries = materialShaderData.bindGroup(3, 'material', uniformSetMap[3], command, bundle);
-            if (!entries)
-                complete = false;
-            else {
-                materialShaderData.uploadUniform();
-                bindGroupLayout.push(entries);
-            }
-        }
-
-        if (complete) {
+        this.renderShaderData.isShare = false;
+        this.materialShaderData.isShare = false;
+        const bindGroupLayout = this._createBindGroupLayout(shaderInstance);
+        if (bindGroupLayout) {
             const pipeline = this._getWebGPURenderPipeline(shaderInstance, context.destRT, context, bindGroupLayout);
             if (command) {
-                if (WebGPUGlobal.useGlobalContext) {
+                if (WebGPUGlobal.useGlobalContext)
                     WebGPUContext.setCommandPipeline(command, pipeline);
-                    WebGPUContext.applyCommandGeometry(command, this.geometry);
-                } else {
-                    command.setPipeline(pipeline);
-                    command.applyGeometry(this.geometry);
-                }
+                else command.setPipeline(pipeline);
             }
             if (bundle) {
-                if (WebGPUGlobal.useGlobalContext) {
+                if (WebGPUGlobal.useGlobalContext)
                     WebGPUContext.setBundlePipeline(bundle, pipeline);
-                    WebGPUContext.applyBundleGeometry(bundle, this.geometry);
-                } else {
-                    bundle.setPipeline(pipeline);
-                    bundle.applyGeometry(this.geometry);
-                }
+                else bundle.setPipeline(pipeline);
             }
             if (this.useCache) {
                 this._pipelineCache[sn] = pipeline;
                 this._stateKey[sn] = stateKey;
             }
+            return true;
         }
-    };
+        return false;
+    }
 
     /**
      * 渲染
@@ -502,74 +529,37 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
                 const shaderInstance = this._shaderInstances[i];
                 if (shaderInstance.complete) {
                     if (this.useCache) { //启用缓存机制
-                        const sceneData = this._sceneData;
-                        const cameraData = this._cameraData;
-                        const renderShaderData = this.renderShaderData;
-                        const materialShaderData = this.materialShaderData;
                         if (this._stateKeyCounter % 10 == 0)
                             stateKey = this._calcStateKey(shaderInstance, context.destRT, context);
                         else stateKey = this._stateKey[i];
-                        if (stateKey != this._stateKey[i] || !this._pipelineCache[i])
+                        if (stateKey != this._stateKey[i] || !this._pipelineCache[i]) //缓存未命中
                             this._createPipeline(i, context, shaderInstance, command, bundle, stateKey); //新建渲染管线
-                        else { //使用缓存
-                            let complete = true;
-                            const uniformSetMap = shaderInstance.uniformSetMap;
-                            if (sceneData) {
-                                if (command || bundle) {
-                                    if (!sceneData.bindGroup(0, 'scene3D', uniformSetMap[0], command, bundle))
-                                        complete = false;
-                                    else sceneData.uploadUniform();
-                                } else sceneData.uploadUniform();
+                        else { //缓存命中
+                            if (command) {
+                                if (WebGPUGlobal.useGlobalContext)
+                                    WebGPUContext.setCommandPipeline(command, this._pipelineCache[i]);
+                                else command.setPipeline(this._pipelineCache[i]);
                             }
-                            if (cameraData) {
-                                if (command || bundle) {
-                                    if (!cameraData.bindGroup(1, 'camera', uniformSetMap[1], command, bundle))
-                                        complete = false;
-                                    else cameraData.uploadUniform();
-                                } else cameraData.uploadUniform();
-                            }
-                            if (renderShaderData) {
-                                if (command || bundle) {
-                                    if (!renderShaderData.bindGroup(2, 'sprite3D', uniformSetMap[2], command, bundle))
-                                        complete = false;
-                                    else renderShaderData.uploadUniform();
-                                } else renderShaderData.uploadUniform();
-                            }
-                            if (materialShaderData) {
-                                if (command || bundle) {
-                                    if (!materialShaderData.bindGroup(3, 'material', uniformSetMap[3], command, bundle))
-                                        complete = false;
-                                    else materialShaderData.uploadUniform();
-                                } else materialShaderData.uploadUniform();
-                            }
-                            if (complete) {
-                                if (command) {
-                                    if (WebGPUGlobal.useGlobalContext) {
-                                        WebGPUContext.setCommandPipeline(command, this._pipelineCache[i]);
-                                        WebGPUContext.applyCommandGeometry(command, this.geometry);
-                                    } else {
-                                        command.setPipeline(this._pipelineCache[i]);
-                                        command.applyGeometry(this.geometry);
-                                    }
-                                }
-                                if (bundle) {
-                                    if (WebGPUGlobal.useGlobalContext) {
-                                        WebGPUContext.setBundlePipeline(bundle, this._pipelineCache[i]);
-                                        WebGPUContext.applyBundleGeometry(bundle, this.geometry);
-                                    } else {
-                                        bundle.setPipeline(this._pipelineCache[i]);
-                                        bundle.applyGeometry(this.geometry);
-                                    }
-                                }
+                            if (bundle) {
+                                if (WebGPUGlobal.useGlobalContext)
+                                    WebGPUContext.setBundlePipeline(bundle, this._pipelineCache[i]);
+                                else bundle.setPipeline(this._pipelineCache[i]);
                             }
                         }
                     } else this._createPipeline(i, context, shaderInstance, command, bundle); //不启用缓存机制
+                    if (command || bundle)
+                        this._bindGroup(shaderInstance, command, bundle); //绑定资源组
+                    this._uploadUniform(); //上传uniform数据
+                    this._uploadGeometry(command, bundle); //上传几何数据
                 }
             }
             this._stateKeyCounter++;
         }
     }
 
+    /**
+     * 销毁
+     */
     destroy(): void {
         WebGPUGlobal.releaseId(this);
         this._shaderInstances.length = 0;

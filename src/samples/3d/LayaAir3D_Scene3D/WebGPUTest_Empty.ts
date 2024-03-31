@@ -225,9 +225,9 @@ export class WebGPUTest_Empty {
             // }));
 
             // 演示胖子骨骼动画模型
-            // Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi-noShadow.lh", Handler.create(this, (node: Sprite3D) => {
-            //     scene.addChild(node);
-            // }));
+            Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi-noShadow.lh", Handler.create(this, (node: Sprite3D) => {
+                scene.addChild(node);
+            }));
 
             // 演示Effect材质
             // const earth = (<Sprite3D>scene.addChild(new Sprite3D()));
@@ -302,24 +302,24 @@ export class WebGPUTest_Empty {
             //     spotCom.spotAngle = 60;
             // }));
 
-            // 演示骨骼动画
-            Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
-                //地面
-                scene.addChild(sprite);
-                //猴子
-                Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey_noShadow.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
-                    scene.addChild(layaMonkey);
-                    layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
-                    //设置时钟定时执行
-                    Laya.timer.frameLoop(1, this, () => {
-                        //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
-                        Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
-                        //根据四元数旋转三维向量
-                        //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
-                        //pointLight.transform.position = this._temp_position;
-                    });
-                }));
-            }));
+            // 演示猴子骨骼动画
+            // Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
+            //     //地面
+            //     scene.addChild(sprite);
+            //     //猴子
+            //     Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey_noShadow.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
+            //         scene.addChild(layaMonkey);
+            //         layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
+            //         //设置时钟定时执行
+            //         Laya.timer.frameLoop(1, this, () => {
+            //             //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
+            //             Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
+            //             //根据四元数旋转三维向量
+            //             //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
+            //             //pointLight.transform.position = this._temp_position;
+            //         });
+            //     }));
+            // }));
         });
     }
 }
