@@ -1,6 +1,6 @@
 import { CommandBuffer } from "../../../d3/core/render/command/CommandBuffer";
 import { WebGPUForwardAddClusterRP } from "./WebGPUForwardAddClusterRP";
-//import { WebGLDirectLightShadowRP } from "./WebGLDirectLightShadowRP";
+import { WebGPUDirectLightShadowRP } from "./WebGPUDirectLightShadowRP";
 //import { WebGLSpotLightShadowRP } from "./WebGLSpotLightShadowRP";
 
 export class WebGPUForwardAddRP {
@@ -19,7 +19,7 @@ export class WebGPUForwardAddRP {
     renderPass: WebGPUForwardAddClusterRP;
 
     /**directlight shadow */
-    //directLightShadowPass: WebGLDirectLightShadowRP;
+    directLightShadowPass: WebGPUDirectLightShadowRP;
 
     /**enable directlight */
     enableDirectLightShadow: boolean = false;
@@ -31,26 +31,30 @@ export class WebGPUForwardAddRP {
     enableSpotLightShadowPass: boolean = false;
 
     constructor() {
-        //this.directLightShadowPass = new WebGLDirectLightShadowRP();
+        this.directLightShadowPass = new WebGPUDirectLightShadowRP();
         //this.spotLightShadowPass = new WebGLSpotLightShadowRP();
         this.renderPass = new WebGPUForwardAddClusterRP();
     }
 
+    /**
+     * 设置后处理之前绘制的渲染命令
+     * @param value 
+     */
     setBeforeImageEffect(value: CommandBuffer[]): void {
         if (value && value.length > 0) {
             this._beforeImageEffectCMDS = value;
-            value.forEach(element => {
-                element._apply(false);
-            });
+            value.forEach(element => element._apply(false));
         }
     }
 
+    /**
+     * 设置所有渲染都结束后绘制的渲染命令
+     * @param value 
+     */
     setAfterEventCmd(value: CommandBuffer[]): void {
         if (value && value.length > 0) {
             this._afterAllRenderCMDS = value;
-            value.forEach(element => {
-                element._apply(false);
-            });
+            value.forEach(element => element._apply(false));
         }
     }
 }

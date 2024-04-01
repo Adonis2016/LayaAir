@@ -8,7 +8,7 @@ import { ShadowCullInfo } from "../WebGLDriver/3DRenderPass/WebGLDirectLightShad
 import { RenderListQueue } from "./RenderListQueue";
 
 /**
- * 裁剪工具类
+ * 裁剪通用工具类
  */
 export class RenderCullUtil {
     /**

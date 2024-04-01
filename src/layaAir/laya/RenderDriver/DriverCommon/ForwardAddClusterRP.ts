@@ -7,12 +7,12 @@ import { Color } from "../../maths/Color";
 import { Vector4 } from "../../maths/Vector4";
 import { RenderClearFlag } from "../../RenderEngine/RenderEnum/RenderClearFlag";
 import { DepthTextureMode } from "../../resource/RenderTexture";
-import { IRenderContext3D, IRenderElement3D, PipelineMode } from "../DriverDesign/3DRenderPass/I3DRenderPass";
+import { IRenderContext3D, PipelineMode } from "../DriverDesign/3DRenderPass/I3DRenderPass";
 import { InternalRenderTarget } from "../DriverDesign/RenderDevice/InternalRenderTarget";
 import { ICameraNodeData } from "../RenderModuleData/Design/3D/I3DRenderModuleData";
 import { WebBaseRenderNode } from "../RenderModuleData/WebModuleData/3D/WebBaseRenderNode";
-import { WebGLForwardAddClusterRP } from "../WebGLDriver/3DRenderPass/WebGLForwardAddClusterRP";
 import { RenderCullUtil } from "./RenderCullUtil";
+import { RenderPassUtil } from "./RenderPassUtil";
 import { RenderListQueue } from "./RenderListQueue";
 
 /**
@@ -59,12 +59,16 @@ export class ForwardAddClusterRP {
         this._zBufferParams = new Vector4();
         this._scissor = new Vector4();
         this._viewPort = new Viewport();
-        this._defaultNormalDepthColor = new Color(0.5, 0.5, 1.0, 0.0);
+        this._defaultNormalDepthColor = new Color(0.5, 0.5, 1, 0);
         this.clearColor = new Color();
         this.depthPipelineMode = "ShadowCaster";
         this.depthNormalPipelineMode = "DepthNormal";
     }
 
+    /**
+     * 设置相机裁剪信息
+     * @param camera 
+     */
     setCameraCullInfo(camera: Camera): void {
         this.cameraCullInfo.position = camera._transform.position;
         this.cameraCullInfo.cullingMask = camera.cullingMask;
@@ -73,30 +77,36 @@ export class ForwardAddClusterRP {
         this.cameraCullInfo.useOcclusionCulling = camera.useOcclusionCulling;
     }
 
+    /**
+     * 设置渲染命令（前向渲染之前）
+     * @param value 
+     */
     setBeforeForwardCmds(value: CommandBuffer[]): void {
         if (value && value.length > 0) {
             this.beforeForwardCmds = value;
-            value.forEach(element => {
-                element._apply(false);
-            });
+            value.forEach(element => element._apply(false));
         }
     }
 
+    /**
+     * 设置渲染命令（天空渲染之前）
+     * @param value 
+     */
     setBeforeSkyboxCmds(value: CommandBuffer[]): void {
         if (value && value.length > 0) {
             this.beforeSkyboxCmds = value;
-            value.forEach(element => {
-                element._apply(false);
-            });
+            value.forEach(element => element._apply(false));
         }
     }
 
+    /**
+     * 设置渲染命令（透明物体渲染之前）
+     * @param value 
+     */
     setBeforeTransparentCmds(value: CommandBuffer[]): void {
         if (value && value.length > 0) {
             this.beforeTransparentCmds = value;
-            value.forEach(element => {
-                element._apply(false);
-            });
+            value.forEach(element => element._apply(false));
         }
     }
 
@@ -108,16 +118,30 @@ export class ForwardAddClusterRP {
      */
     render(context: IRenderContext3D, list: WebBaseRenderNode[], count: number): void {
         context.cameraUpdateMask++
-        this._opaqueList.clear();
-        this._transparent.clear();
+        this._clearRenderList();
         RenderCullUtil.cullByCameraCullInfo(this.cameraCullInfo, list, count, this._opaqueList, this._transparent, context)
         if ((this.depthTextureMode & DepthTextureMode.Depth) != 0)
             this._renderDepthPass(context);
         if ((this.depthTextureMode & DepthTextureMode.DepthNormals) != 0)
             this._renderDepthNormalPass(context);
-        this._viewPort.cloneTo(WebGLForwardAddClusterRP._context3DViewPortCatch);
-        this._scissor.cloneTo(WebGLForwardAddClusterRP._contextScissorPortCatch);
+        this._cacheViewPortAndScissor();
         this._mainPass(context);
+    }
+
+    /**
+     * 清除渲染队列
+     */
+    protected _clearRenderList() {
+        this._opaqueList.clear();
+        this._transparent.clear();
+    }
+
+    /**
+     * 缓存视口和裁剪
+     */
+    protected _cacheViewPortAndScissor(): void {
+        this._viewPort.cloneTo(RenderPassUtil.contextViewPortCache);
+        this._scissor.cloneTo(RenderPassUtil.contextScissorCache);
     }
 
     /**
@@ -169,34 +193,22 @@ export class ForwardAddClusterRP {
      */
     protected _mainPass(context: IRenderContext3D): void {
         context.pipelineMode = this.pipelineMode;
-        this._renderCmd(this.beforeForwardCmds, context);
-        this._recoverRenderContext3D(context);
+        RenderPassUtil.renderCmd(this.beforeForwardCmds, context);
+        RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
         context.setClearData(this.clearFlag, this.clearColor, 1, 0);
         this.enableOpaque && this._opaqueList.renderQueue(context);
-        this._renderCmd(this.beforeSkyboxCmds, context);
+        RenderPassUtil.renderCmd(this.beforeSkyboxCmds, context);
 
         if (this.skyRenderNode) {
-            const skyRenderElement = this.skyRenderNode.renderelements[0] as IRenderElement3D;
-            context.drawRenderElementOne(skyRenderElement);
+            const skyRenderElement = this.skyRenderNode.renderelements[0];
+            if (skyRenderElement.subShader)
+                context.drawRenderElementOne(skyRenderElement);
         }
         if (this.enableOpaque)
             this._opaqueTexturePass();
-        this._renderCmd(this.beforeTransparentCmds, context);
-        this._recoverRenderContext3D(context);
-        this._transparent && this._transparent.renderQueue(context);
-    }
-
-    /**
-     * 渲染命令
-     * @param cmds 
-     * @param context 
-     */
-    protected _renderCmd(cmds: CommandBuffer[], context: IRenderContext3D) {
-        if (!cmds || cmds.length == 0)
-            return;
-        cmds.forEach(function (value) {
-            context.runCMDList(value._renderCMDs);
-        });
+        RenderPassUtil.renderCmd(this.beforeTransparentCmds, context);
+        RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
+        this._transparent.renderQueue(context);
     }
 
     /**
@@ -207,17 +219,5 @@ export class ForwardAddClusterRP {
         // blit.setContext(renderContext);
         // blit.run();
         // blit.recover();
-    }
-
-    /**
-     * 恢复渲染上下文
-     * @param context 
-     */
-    protected _recoverRenderContext3D(context: IRenderContext3D) {
-        const cacheViewPor = WebGLForwardAddClusterRP._context3DViewPortCatch;
-        const cacheScissor = WebGLForwardAddClusterRP._contextScissorPortCatch;
-        context.setViewPort(cacheViewPor);
-        context.setScissor(cacheScissor);
-        context.setRenderTarget(this.destTarget, RenderClearFlag.Nothing);
     }
 }

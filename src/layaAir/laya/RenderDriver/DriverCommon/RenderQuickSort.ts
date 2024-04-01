@@ -24,7 +24,7 @@ export class RenderQuickSort {
     /**
      * @internal
      */
-    _quickSort(left: number, right: number): void {
+    private _quickSort(left: number, right: number): void {
         if (this.elementArray.length > 1) {
             const index = this._partitionRenderObject(left, right);
             const leftIndex = index - 1;

@@ -1,23 +1,23 @@
 import { RenderClearFlag } from "../../../RenderEngine/RenderEnum/RenderClearFlag";
 import { ForwardAddClusterRP } from "../../DriverCommon/ForwardAddClusterRP";
+import { RenderPassUtil } from "../../DriverCommon/RenderPassUtil";
 import { IRenderContext3D, IRenderElement3D } from "../../DriverDesign/3DRenderPass/I3DRenderPass";
 
+/**
+ * WebGPU前向渲染流程
+ */
 export class WebGPUForwardAddClusterRP extends ForwardAddClusterRP {
-    constructor() {
-        super();
-    }
-
     /**
      * 主渲染流程
      * @param context 
      */
     protected _mainPass(context: IRenderContext3D): void {
         context.pipelineMode = this.pipelineMode;
-        this._renderCmd(this.beforeForwardCmds, context);
-        this._recoverRenderContext3D(context);
+        RenderPassUtil.renderCmd(this.beforeForwardCmds, context);
+        RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
 
-        this._renderCmd(this.beforeSkyboxCmds, context);
-        this._recoverRenderContext3D(context);
+        RenderPassUtil.renderCmd(this.beforeSkyboxCmds, context);
+        RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
 
         if (this.skyRenderNode) {
             context.setClearData(RenderClearFlag.Depth, this.clearColor, 1, 0);
@@ -29,12 +29,12 @@ export class WebGPUForwardAddClusterRP extends ForwardAddClusterRP {
         } else this.clearFlag = RenderClearFlag.Color | RenderClearFlag.Depth | RenderClearFlag.Stencil;
 
         context.setClearData(this.clearFlag, this.clearColor, 1, 0);
-        this.enableOpaque && this._opaqueList.renderQueue(context);
-
-        if (this.enableOpaque)
+        if (this.enableOpaque) {
+            this._opaqueList.renderQueue(context);
             this._opaqueTexturePass();
-        this._renderCmd(this.beforeTransparentCmds, context);
-        this._recoverRenderContext3D(context);
-        this._transparent && this._transparent.renderQueue(context);
+        }
+        RenderPassUtil.renderCmd(this.beforeTransparentCmds, context);
+        RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
+        this._transparent.renderQueue(context);
     }
 }

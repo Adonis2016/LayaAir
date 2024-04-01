@@ -14,7 +14,7 @@ import { WebGPURenderElement3D } from "./WebGPURenderElement3D";
  */
 export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
     skinnedData: Float32Array[];
-    materialShaderDatas: WebGPUShaderData[] = [];
+    materialShaderDatas: WebGPUShaderData[];
 
     globalId: number;
     objectName: string = 'WebGPUSkinRenderElement3D';
@@ -23,26 +23,7 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
         super();
         //this.globalId = WebGPUGlobal.getId(this);
         this.bundleId = WebGPUSkinRenderElement3D.bundleIdCounter++;
-        for (let i = 0; i < 4; i++)
-            this.materialShaderDatas[i] = new WebGPUShaderData();
     }
-
-    private _formatToElement = (format: string) => {
-        switch (format) {
-            case 'float32':
-                return 1;
-            case 'float32x2':
-                return 2;
-            case 'float32x3':
-                return 3;
-            case 'float32x4':
-                return 4;
-            case 'uint8x4':
-                return 4;
-            default:
-                return 4;
-        }
-    };
 
     /**
      * 编译着色器
@@ -78,12 +59,16 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
             context.cameraData?.createUniformBuffer(shaderInstance.uniformInfo[1], true);
             this.renderShaderData?.createUniformBuffer(shaderInstance.uniformInfo[2]);
             this.materialShaderData.createUniformBuffer(shaderInstance.uniformInfo[3]);
-            const n = this.skinnedData ? this.skinnedData.length : 1;
-            for (let i = 0; i < n; i++) {
-                this.materialShaderDatas[i].createUniformBuffer(shaderInstance.uniformInfo[3]);
-                this.materialShaderData.cloneTo(this.materialShaderDatas[i]);
+            const n = this.skinnedData ? this.skinnedData.length : 0;
+            if (n > 1) { //蒙皮数据分组大于1时，需要创建相应的多个材质数据
+                this.materialShaderDatas = [];
+                for (let i = 0; i < n; i++) {
+                    this.materialShaderDatas[i] = new WebGPUShaderData();
+                    this.materialShaderDatas[i].createUniformBuffer(shaderInstance.uniformInfo[3]);
+                    this.materialShaderData.cloneTo(this.materialShaderDatas[i]);
+                }
+                this.materialShaderData.coShaderData = this.materialShaderDatas; //共享材质数据
             }
-            this.materialShaderData.coShaderData = this.materialShaderDatas; //共享材质数据
         }
 
         //重编译着色器后，清理绑定组缓存
@@ -157,8 +142,8 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
         for (let i = 0; i < bufferState._vertexBuffers.length; i++) {
             const vb = bufferState._vertexBuffers[i];
             const vs = bufferState.vertexState[i];
-            const oldStride = vs.arrayStride;
-            const newStride = oldStride + 12;
+            const strideOld = vs.arrayStride;
+            const strideNew = strideOld + 12;
             const attrOld = [], attrNew = [];
             const attributes = vs.attributes as [];
             const attrLen = attributes.length;
@@ -167,7 +152,6 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                 attrOld.push({
                     offset: attr.offset,
                     format: attr.format,
-                    element: this._formatToElement(attr.format),
                 });
             }
             for (let j = 0; j < attrLen; j++) {
@@ -181,7 +165,6 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                         attrNew.push({
                             offset: attr2.offset,
                             format: attr2.format,
-                            element: this._formatToElement(attr2.format),
                         });
                     }
                     const vertexCount = vb.buffer.byteLength / vs.arrayStride;
@@ -189,17 +172,31 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                     bufferState.updateBufferLayoutFlag++;
                     const buffer = vb.buffer;
                     vb.buffer = new ArrayBuffer(vs.arrayStride * vertexCount);
+                    const src_ui8 = new Uint8Array(buffer);
+                    const src_f32 = new Float32Array(buffer);
+                    const dst_f32 = new Float32Array(vb.buffer);
+                    let src_ui8_off1 = 0;
+                    let src_f32_off1 = 0;
+                    let dst_f32_off1 = 0;
+                    let src_ui8_off2 = 0;
+                    let src_f32_off2 = 0;
+                    let dst_f32_off2 = 0;
                     //拷贝数据（按照新的数据布局）
                     for (let k = 0; k < vertexCount; k++) {
+                        src_ui8_off1 = k * strideOld;
+                        src_f32_off1 = k * strideOld / 4;
+                        dst_f32_off1 = k * strideNew / 4;
                         for (let l = 0; l < attrLen; l++) {
                             if (attrOld[l].format == 'uint8x4') {
-                                const src = new Uint8Array(buffer, k * oldStride + attrOld[l].offset, attrOld[l].element);
-                                const dst = new Float32Array(vb.buffer, k * newStride + attrNew[l].offset, attrNew[l].element);
-                                dst.set(src);
+                                src_ui8_off2 = src_ui8_off1 + attrOld[l].offset;
+                                dst_f32_off2 = dst_f32_off1 + attrNew[l].offset / 4;
+                                for (let m = 0; m < 4; m++)
+                                    dst_f32[dst_f32_off2 + m] = src_ui8[src_ui8_off2 + m];
                             } else {
-                                const src = new Float32Array(buffer, k * oldStride + attrOld[l].offset, attrOld[l].element);
-                                const dst = new Float32Array(vb.buffer, k * newStride + attrNew[l].offset, attrNew[l].element);
-                                dst.set(src);
+                                src_f32_off2 = src_f32_off1 + attrOld[l].offset / 4;
+                                dst_f32_off2 = dst_f32_off1 + attrNew[l].offset / 4;
+                                for (let m = 0; m < 4; m++)
+                                    dst_f32[dst_f32_off2 + m] = src_f32[src_f32_off2 + m];
                             }
                         }
                     }
@@ -224,7 +221,7 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
             this.geometry.skinIndicesDone = true;
         }
         //如果command和bundle都是null，则只上传shaderData数据，不执行bindGroup操作
-        if (this.isRender) {
+        if (this.isRender && this.skinnedData) {
             let stateKey;
             for (let i = 0, len = this._shaderInstances.length; i < len; i++) {
                 const shaderInstance = this._shaderInstances[i];
@@ -248,14 +245,23 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                             }
                         }
                     } else this._createPipeline(i, context, shaderInstance, command, bundle); //不启用缓存机制
-                    for (let j = 0, len = this.skinnedData.length; j < len; j++) {
-                        const materialShaderData = this.materialShaderDatas[j];
-                        if (materialShaderData && this.skinnedData)
-                            materialShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[j]);
+                    if (this.skinnedData.length == 1) {
+                        if (this.materialShaderData)
+                            this.materialShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[0]);
                         if (command || bundle)
-                            this._bindGroupEx(shaderInstance, command, bundle, j); //绑定资源组
-                        this._uploadUniformEx(j); //上传uniform数据
-                        this._uploadGeometryEx(command, bundle, j); //上传几何数据
+                            this._bindGroup(shaderInstance, command, bundle); //绑定资源组
+                        this._uploadUniform(); //上传uniform数据
+                        this._uploadGeometry(command, bundle); //上传几何数据
+                    } else {
+                        for (let j = 0, len = this.skinnedData.length; j < len; j++) {
+                            const materialShaderData = this.materialShaderDatas[j];
+                            if (materialShaderData)
+                                materialShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[j]);
+                            if (command || bundle)
+                                this._bindGroupEx(shaderInstance, command, bundle, j); //绑定资源组
+                            this._uploadUniformEx(j); //上传uniform数据
+                            this._uploadGeometryEx(command, bundle, j); //上传几何数据
+                        }
                     }
                 }
             }
