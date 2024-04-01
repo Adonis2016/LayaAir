@@ -15,7 +15,6 @@ import { WebGPURenderElement3D } from "./WebGPURenderElement3D";
 export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
     skinnedData: Float32Array[];
     renderShaderDatas: WebGPUShaderData[];
-    materialShaderDatas: WebGPUShaderData[];
 
     globalId: number;
     objectName: string = 'WebGPUSkinRenderElement3D';
@@ -69,13 +68,6 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                     this.renderShaderData.cloneTo(this.renderShaderDatas[i]);
                 }
                 this.renderShaderData.coShaderData = this.renderShaderDatas; //共享材质数据
-                // this.materialShaderDatas = [];
-                // for (let i = 0; i < n; i++) {
-                //     this.materialShaderDatas[i] = new WebGPUShaderData();
-                //     this.materialShaderDatas[i].createUniformBuffer(shaderInstance.uniformInfo[3]);
-                //     this.materialShaderData.cloneTo(this.materialShaderDatas[i]);
-                // }
-                // this.materialShaderData.coShaderData = this.materialShaderDatas; //共享材质数据
             }
         }
 
@@ -106,12 +98,8 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
             this._sceneData.bindGroup(0, 'scene3D', uniformSetMap[0], command, bundle);
         if (this._cameraData)
             this._cameraData.bindGroup(1, 'camera', uniformSetMap[1], command, bundle);
-        //if (this.renderShaderData)
-        //    this.renderShaderData.bindGroup(2, 'sprite3D', uniformSetMap[2], command, bundle);
         if (this.renderShaderDatas[sn])
             this.renderShaderDatas[sn].bindGroup(2, 'sprite3D', uniformSetMap[2], command, bundle);
-        //if (this.materialShaderDatas[sn])
-        //    this.materialShaderDatas[sn].bindGroup(3, 'material', uniformSetMap[3], command, bundle);
         if (this.materialShaderData)
             this.materialShaderData.bindGroup(3, 'material', uniformSetMap[3], command, bundle);
     }
@@ -125,12 +113,8 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
             this._sceneData.uploadUniform();
         if (this._cameraData)
             this._cameraData.uploadUniform();
-        //if (this.renderShaderData)
-        //    this.renderShaderData.uploadUniform();
         if (this.renderShaderDatas[sn])
             this.renderShaderDatas[sn].uploadUniform();
-        //if (this.materialShaderDatas[sn])
-        //    this.materialShaderDatas[sn].uploadUniform();
         if (this.materialShaderData)
             this.materialShaderData.uploadUniform();
     }
@@ -266,8 +250,6 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                         }
                     } else this._createPipeline(i, context, shaderInstance, command, bundle); //不启用缓存机制
                     if (this.skinnedData.length == 1) {
-                        //if (this.materialShaderData)
-                        //    this.materialShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[0]);
                         if (this.renderShaderData)
                             this.renderShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[0]);
                         if (command || bundle)
@@ -279,9 +261,6 @@ export class WebGPUSkinRenderElement3D extends WebGPURenderElement3D {
                             const renderShaderData = this.renderShaderDatas[j];
                             if (renderShaderData)
                                 renderShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[j]);
-                            // const materialShaderData = this.materialShaderDatas[j];
-                            // if (materialShaderData)
-                            //     materialShaderData.setBuffer(SkinnedMeshSprite3D.BONES, this.skinnedData[j]);
                             if (command || bundle)
                                 this._bindGroupEx(shaderInstance, command, bundle, j); //绑定资源组
                             this._uploadUniformEx(j); //上传uniform数据

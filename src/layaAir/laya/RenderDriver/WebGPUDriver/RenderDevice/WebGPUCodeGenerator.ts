@@ -2,6 +2,7 @@ import { Config3D } from "../../../../Config3D";
 import { RenderParams } from "../../../RenderEngine/RenderEnum/RenderParams";
 import { Shader3D } from "../../../RenderEngine/RenderShader/Shader3D";
 import { UniformMapType } from "../../../RenderEngine/RenderShader/SubShader";
+import { SkinnedMeshSprite3D } from "../../../d3/core/SkinnedMeshSprite3D";
 import { LayaGL } from "../../../layagl/LayaGL";
 import { ShaderNode } from "../../../webgl/utils/ShaderNode";
 import { ShaderDataType } from "../../DriverDesign/RenderDevice/ShaderData";
@@ -109,21 +110,21 @@ export class WebGPUCodeGenerator {
      * @param arrayMap 
      */
     static uniformString(uniformMap: UniformMapTypeEx, arrayMap: NameNumberMap) {
-        const scene3DUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("Scene3D") as WebGLCommandUniformMap;
-        const cameraUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("BaseCamera") as WebGLCommandUniformMap;
-        const sprite3DUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("Sprite3D") as WebGLCommandUniformMap;
-        const simpleSkinnedMeshUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("SimpleSkinnedMesh") as WebGLCommandUniformMap;
-        const shurikenSprite3DUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("ShurikenSprite3D") as WebGLCommandUniformMap;
-        const trailRenderUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("TrailRender") as WebGLCommandUniformMap;
-        const skyRendererUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap("SkyRenderer") as WebGLCommandUniformMap;
-        let scene3DUniforms: NameAndType[] = [];
-        let cameraUniforms: NameAndType[] = [];
-        let sprite3DUniforms: NameAndType[] = [];
-        let materialUniforms: NameAndType[] = [];
-        let textureUniforms: NameAndType[] = [];
+        const globalUniformMap = LayaGL.renderDeviceFactory.createGlobalUniformMap;
+        const scene3DUniformMap = globalUniformMap("Scene3D") as WebGLCommandUniformMap;
+        const cameraUniformMap = globalUniformMap("BaseCamera") as WebGLCommandUniformMap;
+        const sprite3DUniformMap = globalUniformMap("Sprite3D") as WebGLCommandUniformMap;
+        const simpleSkinnedMeshUniformMap = globalUniformMap("SimpleSkinnedMesh") as WebGLCommandUniformMap;
+        const shurikenSprite3DUniformMap = globalUniformMap("ShurikenSprite3D") as WebGLCommandUniformMap;
+        const trailRenderUniformMap = globalUniformMap("TrailRender") as WebGLCommandUniformMap;
+        const skyRendererUniformMap = globalUniformMap("SkyRenderer") as WebGLCommandUniformMap;
+        const scene3DUniforms: NameAndType[] = [];
+        const cameraUniforms: NameAndType[] = [];
+        const sprite3DUniforms: NameAndType[] = [];
+        const materialUniforms: NameAndType[] = [];
+        const textureUniforms: NameAndType[] = [];
 
-        sprite3DUniformMap.addShaderUniform(Shader3D.propertyNameToID("u_Bones"), "u_Bones", ShaderDataType.Matrix4x4);
-
+        sprite3DUniformMap.addShaderUniform(SkinnedMeshSprite3D.BONES, 'u_Bones', ShaderDataType.Matrix4x4);
         const uniformInfo: WebGPUUniformPropertyBindingInfo[] = [];
 
         const _have = (group: NameAndType[], name: string) => {
@@ -230,10 +231,10 @@ export class WebGPUCodeGenerator {
             return sortedUniforms[0];
         };
 
-        scene3DUniforms = _procUniforms(0, 0, "scene3D", scene3DUniformMap);
-        cameraUniforms = _procUniforms(1, 0, "camera", cameraUniformMap);
-        sprite3DUniforms = _procUniforms(2, 0, "sprite3D", undefined, sprite3DUniforms);
-        materialUniforms = _procUniforms(3, 0, "material", undefined, materialUniforms);
+        _procUniforms(0, 0, "scene3D", scene3DUniformMap);
+        _procUniforms(1, 0, "camera", cameraUniformMap);
+        _procUniforms(2, 0, "sprite3D", null, sprite3DUniforms);
+        _procUniforms(3, 0, "material", null, materialUniforms);
 
         return {
             uniformGLSL,
@@ -311,6 +312,7 @@ export class WebGPUCodeGenerator {
 
     /**
      * 去除naga转译报错的代码
+     * @param code 
      */
     static changeUnfitCode(code: string) {
         const regex1 = /const\s+(?:in|highp|mediump|lowp)\s+/g;
@@ -323,10 +325,7 @@ export class WebGPUCodeGenerator {
      * 生成a_WorldMat拼合代码
      */
     static genAWorldMat() {
-        const code =
-            `#define a_WorldMat mat4(a_WorldMat_0, a_WorldMat_1, a_WorldMat_2, a_WorldMat_3)
-        `;
-        return `${code}`;
+        return "#define a_WorldMat mat4(a_WorldMat_0, a_WorldMat_1, a_WorldMat_2, a_WorldMat_3)";
     }
 
     /**
@@ -775,7 +774,6 @@ ${varyingGLSL_fs}
 ${uniformGLSL}
 ${textureGLSL_fs}
 `;
-
         //合并成完整的GLSL4.5代码
         let dstVS = vertexHead + defineStr + (vsNeedInverseFunc ? inverseFunc : '') + vsOut;
         let dstFS = fragmentHead + defineStr + (fsNeedInverseFunc ? inverseFunc : '') + fsOut;
