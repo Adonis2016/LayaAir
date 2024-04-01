@@ -71,7 +71,7 @@ export class WebGPURenderElement3D implements IRenderElement3D, IRenderPipelineI
     objectName: string = 'WebGPURenderElement3D';
 
     constructor() {
-        //this.globalId = WebGPUGlobal.getId(this);
+        this.globalId = WebGPUGlobal.getId(this);
         this.bundleId = WebGPURenderElement3D.bundleIdCounter++;
     }
 

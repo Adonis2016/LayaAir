@@ -75,7 +75,7 @@ export class WebGPUUniformBuffer {
 
         this.user = user;
         this.gpuBuffer = gpuBuffer;
-        //this.globalId = WebGPUGlobal.getId(this);
+        this.globalId = WebGPUGlobal.getId(this);
     }
 
     /**

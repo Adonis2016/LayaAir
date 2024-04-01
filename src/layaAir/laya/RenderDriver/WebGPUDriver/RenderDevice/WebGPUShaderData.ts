@@ -32,6 +32,7 @@ export class WebGPUShaderData extends ShaderData {
     private _uniformBuffer: WebGPUUniformBuffer;
     private _bindGroupMap: Map<string, [GPUBindGroup, GPUBindGroupLayoutEntry[]]>;
     private _bindGroup: GPUBindGroup;
+    //private _bindGroupEntries: GPUBindGroupEntry[];
     private _bindGroupLayoutEntries: GPUBindGroupLayoutEntry[];
     bindGroupIsNew: boolean = false; //是否新建了bindGroup
 
@@ -69,7 +70,7 @@ export class WebGPUShaderData extends ShaderData {
         this._bindGroupMap = new Map();
         this._defineDatas = new WebDefineDatas();
 
-        //this.globalId = WebGPUGlobal.getId(this);
+        this.globalId = WebGPUGlobal.getId(this);
     }
 
     /**
@@ -284,6 +285,7 @@ export class WebGPUShaderData extends ShaderData {
                 layout: device.createBindGroupLayout(bindGroupLayoutDesc),
                 entries: bindGroupEntries,
             });
+            //this._bindGroupEntries = bindGroupEntries;
             //缓存绑定组
             if (this.isShare)
                 this._bindGroupMap.set(key, [bindGroup, bindGroupLayoutEntries]);
@@ -300,6 +302,7 @@ export class WebGPUShaderData extends ShaderData {
             command.setBindGroup(groupId, bindGroup);
         if (bundle)
             bundle.setBindGroup(groupId, bindGroup);
+        //console.log(this._name, this.globalId, this._bindGroupEntries);
         //返回绑定组结构（用于建立pipeline）
         return bindGroupLayoutEntries;
     }

@@ -122,6 +122,8 @@ export class WebGPUCodeGenerator {
         let materialUniforms: NameAndType[] = [];
         let textureUniforms: NameAndType[] = [];
 
+        sprite3DUniformMap.addShaderUniform(Shader3D.propertyNameToID("u_Bones"), "u_Bones", ShaderDataType.Matrix4x4);
+
         const uniformInfo: WebGPUUniformPropertyBindingInfo[] = [];
 
         const _have = (group: NameAndType[], name: string) => {
