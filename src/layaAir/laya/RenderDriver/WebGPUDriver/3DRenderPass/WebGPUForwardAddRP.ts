@@ -1,7 +1,7 @@
 import { CommandBuffer } from "../../../d3/core/render/command/CommandBuffer";
 import { WebGPUForwardAddClusterRP } from "./WebGPUForwardAddClusterRP";
 import { WebGPUDirectLightShadowRP } from "./WebGPUDirectLightShadowRP";
-//import { WebGLSpotLightShadowRP } from "./WebGLSpotLightShadowRP";
+import { WebGPUSpotLightShadowRP } from "./WebGPUSpotLightShadowRP";
 
 export class WebGPUForwardAddRP {
     /**是否开启阴影 */
@@ -25,14 +25,14 @@ export class WebGPUForwardAddRP {
     enableDirectLightShadow: boolean = false;
 
     /**spot shadow */
-    //spotLightShadowPass: WebGLSpotLightShadowRP;
+    spotLightShadowPass: WebGPUSpotLightShadowRP;
 
     /**enable spot */
     enableSpotLightShadowPass: boolean = false;
 
     constructor() {
         this.directLightShadowPass = new WebGPUDirectLightShadowRP();
-        //this.spotLightShadowPass = new WebGLSpotLightShadowRP();
+        this.spotLightShadowPass = new WebGPUSpotLightShadowRP();
         this.renderPass = new WebGPUForwardAddClusterRP();
     }
 

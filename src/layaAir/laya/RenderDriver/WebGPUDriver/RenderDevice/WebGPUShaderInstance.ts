@@ -34,6 +34,11 @@ export class WebGPUShaderInstance implements IShaderInstance {
         this.globalId = WebGPUGlobal.getId(this);
     }
 
+    /**
+     * 创建ShaderInstance
+     * @param shaderProcessInfo 
+     * @param shaderPass 
+     */
     _create(shaderProcessInfo: ShaderProcessInfo, shaderPass: ShaderPass): void {
         const engine = WebGPURenderEngine._instance;
         const device = engine.getDevice();
@@ -101,7 +106,7 @@ export class WebGPUShaderInstance implements IShaderInstance {
         };
 
         this.complete = true; //@ts-ignore
-        console.log('create ShaderInstance:', this._id, shaderPass._owner._owner.name);
+        console.log('create shaderInstance_' + this._id, shaderPass._owner._owner.name);
     }
 
     /**

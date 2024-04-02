@@ -4,6 +4,8 @@ import { I3DRenderPassFactory } from "../../DriverDesign/3DRenderPass/I3DRenderP
 import { DrawNodeCMDData, BlitQuadCMDData, DrawElementCMDData, SetViewportCMD, SetRenderTargetCMD, SetRenderDataCMD, SetShaderDefineCMD } from "../../DriverDesign/3DRenderPass/IRendderCMD";
 import { ISceneRenderManager } from "../../DriverDesign/3DRenderPass/ISceneRenderManager";
 import { WebGPU3DRenderPass } from "./WebGPU3DRenderPass";
+import { WebGPUBlitQuadCMDData } from "./WebGPURenderCMD/WebGPUBlitQuadCMDData";
+import { WebGPUSetRenderData } from "./WebGPURenderCMD/WebGPUSetRenderData";
 import { WebGPURenderContext3D } from "./WebGPURenderContext3D";
 import { WebGPURenderElement3D } from "./WebGPURenderElement3D";
 import { WebGPUSkinRenderElement3D } from "./WebGPUSkinRenderElement3D";
@@ -31,7 +33,7 @@ export class WebGPU3DRenderPassFactory implements I3DRenderPassFactory {
         return null;//TODO
     }
     createBlitQuadCMDData(): BlitQuadCMDData {
-        return null;//TODO
+        return new WebGPUBlitQuadCMDData();
     }
     createDrawElementCMDData(): DrawElementCMDData {
         return null;//TODO
@@ -43,7 +45,7 @@ export class WebGPU3DRenderPassFactory implements I3DRenderPassFactory {
         return null;//TODO
     }
     createSetRenderDataCMD(): SetRenderDataCMD {
-        return null;//TODO
+        return new WebGPUSetRenderData();
     }
     createSetShaderDefineCMD(): SetShaderDefineCMD {
         return null;//TODO

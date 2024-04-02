@@ -329,13 +329,15 @@ export class WebGPUTest_Empty {
                     scene.addChild(monkey2);
                     monkey2.transform.localPositionX = 2;
                     //设置时钟定时执行
-                    // Laya.timer.frameLoop(1, this, () => {
-                    //     //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
-                    //     Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
-                    //     //根据四元数旋转三维向量
-                    //     //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
-                    //     //pointLight.transform.position = this._temp_position;
-                    // });
+                    Laya.timer.frameLoop(1, this, () => {
+                        //从欧拉角生成四元数（顺序为Yaw、Pitch、Roll）
+                        Quaternion.createFromYawPitchRoll(0.025, 0, 0, this._temp_quaternion);
+                        Vector3.transformQuat(monkey2.transform.position, this._temp_quaternion, this._temp_position);
+                        monkey2.transform.position = this._temp_position;
+                        //根据四元数旋转三维向量
+                        //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
+                        //pointLight.transform.position = this._temp_position;
+                    });
                 }));
             }));
         });

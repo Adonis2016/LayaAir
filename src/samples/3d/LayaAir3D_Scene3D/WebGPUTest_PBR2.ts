@@ -107,23 +107,23 @@ export class WebGPUTest_PBR2 {
             dirCom.color.setValue(1.2, 1.2, 1.2, 1);
 
             //打开后处理
-            // if (true) {
-            //     const postProcess = new PostProcess();
-            //     const bloom = new BloomEffect();
-            //     postProcess.addEffect(bloom);
-            //     camera.postProcess = postProcess;
-            //     camera.enableHDR = true;
+            if (false) {
+                const postProcess = new PostProcess();
+                const bloom = new BloomEffect();
+                postProcess.addEffect(bloom);
+                camera.postProcess = postProcess;
+                camera.enableHDR = true;
 
-            //     //设置泛光参数
-            //     bloom.intensity = 5;
-            //     bloom.threshold = 0.9;
-            //     bloom.softKnee = 0.5;
-            //     bloom.clamp = 65472;
-            //     bloom.diffusion = 5;
-            //     bloom.anamorphicRatio = 0.0;
-            //     bloom.color = new Color(1, 1, 1, 1);
-            //     bloom.fastMode = true;
-            // }
+                //设置泛光参数
+                bloom.intensity = 5;
+                bloom.threshold = 0.9;
+                bloom.softKnee = 0.5;
+                bloom.clamp = 65472;
+                bloom.diffusion = 5;
+                bloom.anamorphicRatio = 0.0;
+                bloom.color = new Color(1, 1, 1, 1);
+                bloom.fastMode = true;
+            }
 
             const boxMesh1 = PrimitiveMesh.createBox(0.4, 0.4, 0.4);
             const coneMesh1 = PrimitiveMesh.createCone(0.2, 0.5, 64);
@@ -225,7 +225,10 @@ export class WebGPUTest_PBR2 {
                 boxS3D.push(bs3d);
                 bs3d.transform.position = new Vector3(i - n * 0.5, -2, 0);
                 bs3d.addComponent(MeshFilter).sharedMesh = boxMesh1;
-                bs3d.addComponent(MeshRenderer).material = materials[i];
+                const render = bs3d.addComponent(MeshRenderer);
+                render.material = materials[i];
+                //render.castShadow = true;
+                //render.receiveShadow = false;
                 //@ts-ignore
                 bs3d.rotate = new Vector3((Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02);
             }
