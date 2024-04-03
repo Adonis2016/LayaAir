@@ -26,9 +26,12 @@ import { WebGPUInternalRT } from "../RenderDevice/WebGPUInternalRT";
 import { WebGPUShaderData } from "../RenderDevice/WebGPUShaderData";
 import { WebGPURenderContext3D } from "./WebGPURenderContext3D";
 
+/**
+ * 聚光灯阴影数据
+ */
 export class ShadowSpotData {
-    cameraShaderValue: WebGPUShaderData;
-    position: Vector3 = new Vector3;
+    cameraShaderData: WebGPUShaderData;
+    position: Vector3 = new Vector3();
     offsetX: number;
     offsetY: number;
     resolution: number;
@@ -40,26 +43,24 @@ export class ShadowSpotData {
     cameraUBData: UnifromBufferData;
 
     constructor() {
-        this.cameraShaderValue = <WebGPUShaderData>LayaGL.renderDeviceFactory.createShaderData(null);
-
+        this.cameraShaderData = <WebGPUShaderData>LayaGL.renderDeviceFactory.createShaderData(null);
+        this.cameraCullInfo = new CameraCullInfo();
         if (Config3D._uniformBlock) {
             let cameraUBO = UniformBufferObject.getBuffer(UniformBufferObject.UBONAME_CAMERA, 0);
-            let cameraUBData = BaseCamera.createCameraUniformBlock();
-
+            const cameraUBData = BaseCamera.createCameraUniformBlock();
             if (!cameraUBO)
                 cameraUBO = UniformBufferObject.create(UniformBufferObject.UBONAME_CAMERA, BufferUsage.Dynamic, cameraUBData.getbyteLength(), false);
-
-            this.cameraShaderValue._addCheckUBO(UniformBufferObject.UBONAME_CAMERA, cameraUBO, cameraUBData);
-            this.cameraShaderValue.setUniformBuffer(BaseCamera.CAMERAUNIFORMBLOCK, cameraUBO);
-
+            this.cameraShaderData._addCheckUBO(UniformBufferObject.UBONAME_CAMERA, cameraUBO, cameraUBData);
+            this.cameraShaderData.setUniformBuffer(BaseCamera.CAMERAUNIFORMBLOCK, cameraUBO);
             this.cameraUBO = cameraUBO;
             this.cameraUBData = cameraUBData;
         }
-
-        this.cameraCullInfo = new CameraCullInfo();
     }
 }
 
+/**
+ * 聚光灯阴影渲染流程
+ */
 export class WebGPUSpotLightShadowRP {
     destTarget: InternalRenderTarget;
     /**@internal */
@@ -93,9 +94,10 @@ export class WebGPUSpotLightShadowRP {
     private _shadowSpotMapSize: Vector4 = new Vector4();
     /** @internal */
     private _shadowSpotMatrices: Matrix4x4 = new Matrix4x4();
-    /**@internal */
+    /** @internal */
     private _shadowBias: Vector4;
 
+    /** @internal */
     private _renderQueue: RenderListQueue;
 
     set light(value: SpotLightCom) {
@@ -106,7 +108,7 @@ export class WebGPUSpotLightShadowRP {
         this._spotAngle = this._light.spotAngle;
         this._spotRange = this._light.spotRange;
         this._shadowStrength = this._light.shadowStrength;
-        //this.destTarget && RenderTexture.recoverToPool(this.destTarget);// TODO 优化
+        //this.destTarget && RenderTexture.recoverToPool(this.destTarget); //TODO 优化
         //this.destTarget = ShadowUtils.getTemporaryShadowTexture(this._shadowResolution, this._shadowResolution, ShadowMapFormat.bit16);
     }
 
@@ -122,8 +124,8 @@ export class WebGPUSpotLightShadowRP {
      * 更新阴影数据
      * @param context 
      */
-    update(context: WebGPURenderContext3D): void {
-        var shadowSpotData: ShadowSpotData = this._shadowSpotData;
+    update(context: WebGPURenderContext3D) {
+        const shadowSpotData = this._shadowSpotData;
         this._getSpotLightShadowData(shadowSpotData, this._shadowResolution, this._shadowParams, this._shadowSpotMatrices, this._shadowSpotMapSize);
     }
 
@@ -131,30 +133,26 @@ export class WebGPUSpotLightShadowRP {
      * 渲染
      * @param context 
      * @param list 
+     * @param count 
      */
-    render(context: WebGPURenderContext3D, list: WebBaseRenderNode[], count: number): void {
-        let originCameraData = context.cameraData;
-
-        var shaderValues: WebGPUShaderData = context.sceneData;
+    render(context: WebGPURenderContext3D, list: WebBaseRenderNode[], count: number) {
+        const originCameraData = context.cameraData;
+        const shadowSpotData = this._shadowSpotData;
+        const shaderData: WebGPUShaderData = context.sceneData;
         context.pipelineMode = "ShadowCaster";
         context.setRenderTarget(this.destTarget as WebGPUInternalRT, RenderClearFlag.Depth);
-        var shadowSpotData: ShadowSpotData = this._shadowSpotData;
         this._getShadowBias(shadowSpotData.resolution, this._shadowBias);
-        this._setupShadowCasterShaderValues(shaderValues, shadowSpotData, this._shadowParams, this._shadowBias);
+        this._setupShadowCasterShaderValues(shaderData, shadowSpotData, this._shadowParams, this._shadowBias);
         RenderCullUtil.cullSpotShadow(shadowSpotData.cameraCullInfo, list, count, this._renderQueue, context);
-        context.cameraData = shadowSpotData.cameraShaderValue;
-        context.cameraUpdateMask++;;
-        //if (this._renderQueue._elements.length > 0) {
+        context.cameraData = shadowSpotData.cameraShaderData;
+        context.cameraUpdateMask++;
+
         Viewport._tempViewport.set(shadowSpotData.offsetX, shadowSpotData.offsetY, shadowSpotData.resolution, shadowSpotData.resolution);
         Vector4.tempVec4.setValue(shadowSpotData.offsetX, shadowSpotData.offsetY, shadowSpotData.resolution, shadowSpotData.resolution);
-        //} else {
-        //    Viewport._tempViewport.set(shadowSpotData.offsetX, shadowSpotData.offsetY, shadowSpotData.resolution, shadowSpotData.resolution);
-        //    Vector4.tempVec4.setValue(shadowSpotData.offsetX, shadowSpotData.offsetY, shadowSpotData.resolution, shadowSpotData.resolution);
-        //}
         context.setViewPort(Viewport._tempViewport);
         context.setScissor(Vector4.tempVec4);
 
-        if (shadowSpotData.cameraUBO && shadowSpotData.cameraUBData)
+        if (shadowSpotData.cameraUBO && shadowSpotData.cameraUBData) //这里可能会有问题
             shadowSpotData.cameraUBO.setDataByUniformBufferData(shadowSpotData.cameraUBData);
 
         context.setClearData(RenderClearFlag.Depth, Color.BLACK, 1, 0);
@@ -170,19 +168,19 @@ export class WebGPUSpotLightShadowRP {
      * @internal
      */
     private _getSpotLightShadowData(shadowSpotData: ShadowSpotData, resolution: number, shadowParams: Vector4, shadowSpotMatrices: Matrix4x4, shadowMapSize: Vector4) {
-        var out: Vector3 = shadowSpotData.position = this._lightPos;
+        const out = shadowSpotData.position = this._lightPos;
         shadowSpotData.resolution = resolution;
-        shadowMapSize.setValue(1.0 / resolution, 1.0 / resolution, resolution, resolution);
+        shadowMapSize.setValue(1 / resolution, 1 / resolution, resolution, resolution);
         shadowSpotData.offsetX = 0;
         shadowSpotData.offsetY = 0;
 
-        var spotWorldMatrix: Matrix4x4 = this._lightWorldMatrix;
-        var viewMatrix: Matrix4x4 = shadowSpotData.viewMatrix;
-        var projectMatrix: Matrix4x4 = shadowSpotData.projectionMatrix;
-        var viewProjectMatrix: Matrix4x4 = shadowSpotData.viewProjectMatrix;
-        var BoundFrustum = shadowSpotData.cameraCullInfo.boundFrustum;
+        const spotWorldMatrix = this._lightWorldMatrix;
+        const viewMatrix = shadowSpotData.viewMatrix;
+        const projectMatrix = shadowSpotData.projectionMatrix;
+        const viewProjectMatrix = shadowSpotData.viewProjectMatrix;
+        const BoundFrustum = shadowSpotData.cameraCullInfo.boundFrustum;
         spotWorldMatrix.invert(viewMatrix);
-        Matrix4x4.createPerspective(3.1416 * this._spotAngle / 180.0, 1, 0.1, this._spotRange, projectMatrix);
+        Matrix4x4.createPerspective(3.14159 * this._spotAngle / 180, 1, 0.1, this._spotRange, projectMatrix);
         shadowParams.y = this._shadowStrength;
         Matrix4x4.multiply(projectMatrix, viewMatrix, viewProjectMatrix);
         BoundFrustum.matrix = viewProjectMatrix;
@@ -195,19 +193,19 @@ export class WebGPUSpotLightShadowRP {
      * @param shadowResolution 
      * @param out 
      */
-    private _getShadowBias(shadowResolution: number, out: Vector4): void {
+    private _getShadowBias(shadowResolution: number, out: Vector4) {
         // For perspective projections, shadow texel size varies with depth
         // It will only work well if done in receiver side in the pixel shader. Currently We
         // do bias on caster side in vertex shader. When we add shader quality tiers we can properly
         // handle this. For now, as a poor approximation we do a constant bias and compute the size of
         // the frustum as if it was orthogonal considering the size at mid point between near and far planes.
         // Depending on how big the light range is, it will be good enough with some tweaks in bias
-        var frustumSize = Math.tan(this._spotAngle * 0.5 * MathUtils3D.Deg2Rad) * this._spotRange;
+        const frustumSize = Math.tan(this._spotAngle * 0.5 * MathUtils3D.Deg2Rad) * this._spotRange;
 
         // depth and normal bias scale is in shadowmap texel size in world space
-        var texelSize: number = frustumSize / shadowResolution;
-        var depthBias: number = -this._light.shadowDepthBias * texelSize;
-        var normalBias: number = -this._light.shadowNormalBias * texelSize;
+        const texelSize = frustumSize / shadowResolution;
+        let depthBias = -this._light.shadowDepthBias * texelSize;
+        let normalBias = -this._light.shadowNormalBias * texelSize;
 
         if (this._shadowMode == ShadowMode.SoftHigh) {
             // TODO: depth and normal bias assume sample is no more than 1 texel away from shadowmap
@@ -215,25 +213,33 @@ export class WebGPUSpotLightShadowRP {
             // cone base bias (based on distance to center sample)
             // or receiver place bias based on derivatives.
             // For now we scale it by the PCF kernel size (5x5)
-            const kernelRadius: number = 2.5;
+            const kernelRadius = 2.5;
             depthBias *= kernelRadius;
             normalBias *= kernelRadius;
         }
-        out.setValue(depthBias, normalBias, 0.0, 0.0);
+        out.setValue(depthBias, normalBias, 0, 0);
     }
 
-    private _setupShadowCasterShaderValues(shaderValues: WebGPUShaderData, shadowSliceData: ShadowSpotData, shadowparams: Vector4, shadowBias: Vector4): void {
-        shaderValues.setVector(ShadowCasterPass.SHADOW_BIAS, shadowBias);
-        shaderValues.setVector(ShadowCasterPass.SHADOW_PARAMS, shadowparams);
-        var cameraSV: WebGPUShaderData = shadowSliceData.cameraShaderValue;//TODO:should optimization with shader upload.
-        cameraSV.setMatrix4x4(BaseCamera.VIEWMATRIX, shadowSliceData.viewMatrix);
-        cameraSV.setMatrix4x4(BaseCamera.PROJECTMATRIX, shadowSliceData.projectionMatrix);
-        cameraSV.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
-        shaderValues.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
+    /**
+     * 设置阴影级联数据模式
+     * @param shaderData 
+     * @param shadowSliceData 
+     * @param shadowParams 
+     * @param shadowBias 
+     */
+    private _setupShadowCasterShaderValues(shaderData: WebGPUShaderData, shadowSliceData: ShadowSpotData, shadowParams: Vector4, shadowBias: Vector4) {
+        shaderData.setVector(ShadowCasterPass.SHADOW_BIAS, shadowBias);
+        shaderData.setVector(ShadowCasterPass.SHADOW_PARAMS, shadowParams);
+        const cameraData = shadowSliceData.cameraShaderData; //TODO:should optimization with shader upload.
+        cameraData.setMatrix4x4(BaseCamera.VIEWMATRIX, shadowSliceData.viewMatrix);
+        cameraData.setMatrix4x4(BaseCamera.PROJECTMATRIX, shadowSliceData.projectionMatrix);
+        cameraData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
+        shaderData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
     }
 
     /**
      * apply shadowCast cmd array
+     * @param context 
      */
     private _applyCasterPassCommandBuffer(context: WebGPURenderContext3D) {
         if (this.shadowCasterCommanBuffer && this.shadowCasterCommanBuffer.length > 0)
@@ -242,11 +248,11 @@ export class WebGPUSpotLightShadowRP {
 
     /**
      * 设置聚光接受阴影的模式
-     * @internal
-     * @param shaderValues 渲染数据
+     * @param shaderData 渲染数据
+     * @param cameraData 相机数据
      */
-    private _applyRenderData(sceneData: WebGPUShaderData, cameraData: WebGPUShaderData): void {
-        var spotLight: WebSpotLight = this._light;
+    private _applyRenderData(sceneData: WebGPUShaderData, cameraData: WebGPUShaderData) {
+        const spotLight = this._light;
         switch (spotLight.shadowMode) {
             case ShadowMode.Hard:
                 sceneData.removeDefine(Scene3DShaderDeclaration.SHADERDEFINE_SHADOW_SPOT_SOFT_SHADOW_HIGH);
@@ -261,7 +267,7 @@ export class WebGPUSpotLightShadowRP {
                 sceneData.removeDefine(Scene3DShaderDeclaration.SHADERDEFINE_SHADOW_SPOT_SOFT_SHADOW_LOW);
                 break;
         }
-        sceneData.setMatrix4x4(ShadowCasterPass.SHADOW_SPOTMATRICES, this._shadowSpotMatrices)
+        sceneData.setMatrix4x4(ShadowCasterPass.SHADOW_SPOTMATRICES, this._shadowSpotMatrices);
         sceneData.setVector(ShadowCasterPass.SHADOW_SPOTMAP_SIZE, this._shadowSpotMapSize);
         sceneData.setVector(ShadowCasterPass.SHADOW_PARAMS, this._shadowParams);
     }

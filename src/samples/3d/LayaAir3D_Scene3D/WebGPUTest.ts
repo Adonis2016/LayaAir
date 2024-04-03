@@ -76,7 +76,7 @@ export class WebGPUTest {
             dirCom.color.setValue(0.8, 0.8, 0.8, 1);
 
             //打开后处理
-            if (true) {
+            if (false) {
                 const postProcess = new PostProcess();
                 const bloom = new BloomEffect();
                 postProcess.addEffect(bloom);
@@ -122,9 +122,9 @@ export class WebGPUTest {
                 material3.metallicGlossTexture = Laya.loader.getRes("res/threeDimen/texture/normal.jpg", Loader.TEXTURE2D);
             }));
 
-            const n = 10;
-            const m = 10;
-            const l = 10;
+            const n = 1;
+            const m = 1;
+            const l = 1;
             for (let i = 0; i < n; i++) {
                 for (let j = 0; j < m; j++) {
                     for (let k = 0; k < l; k++) {

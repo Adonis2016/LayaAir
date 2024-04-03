@@ -21,7 +21,6 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
     get dest(): WebGPUInternalRT {
         return this._dest;
     }
-
     set dest(value: WebGPUInternalRT) {
         this._dest = value;
     }
@@ -29,7 +28,6 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
     get viewport(): Viewport {
         return this._viewport;
     }
-
     set viewport(value: Viewport) {
         value.cloneTo(this._viewport);
     }
@@ -37,7 +35,6 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
     get scissor(): Vector4 {
         return this._scissor;
     }
-
     set scissor(value: Vector4) {
         value.cloneTo(this._scissor);
     }
@@ -45,7 +42,6 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
     get source(): InternalTexture {
         return this._source;
     }
-
     set source(value: InternalTexture) {
         this._source = value;
         if (this._source)
@@ -55,7 +51,6 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
     get offsetScale(): Vector4 {
         return this._offsetScale;
     }
-
     set offsetScale(value: Vector4) {
         value.cloneTo(this._offsetScale);
     }
@@ -76,7 +71,7 @@ export class WebGPUBlitQuadCMDData extends BlitQuadCMDData {
         this._sourceTexelSize = new Vector4();
     }
 
-    apply(context: WebGPURenderContext3D): void {
+    apply(context: WebGPURenderContext3D) {
         this.element.materialShaderData._setInternalTexture(Command.SCREENTEXTURE_ID, this._source);
         this.element.materialShaderData.setVector(Command.SCREENTEXTUREOFFSETSCALE_ID, this._offsetScale);
         this.element.materialShaderData.setVector(Command.MAINTEXTURE_TEXELSIZE_ID, this._sourceTexelSize);

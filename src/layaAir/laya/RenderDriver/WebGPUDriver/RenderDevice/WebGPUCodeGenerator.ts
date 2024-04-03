@@ -10,6 +10,7 @@ import { WebGLCommandUniformMap } from "../../WebGLDriver/RenderDevice/WebGLComm
 import { TypeOutData } from "../ShaderCompile/WebGPUShaderCompileCode";
 import { WebGPUShaderCompileDef } from "../ShaderCompile/WebGPUShaderCompileDef";
 import { WebGPUShaderCompileUtil } from "../ShaderCompile/WebGPUShaderCompileUtil";
+import { WebGPU_GLSLFunction } from "./GLSLParse/WebGPU_GLSLFunction";
 import { NagaWASM } from "./Naga/NagaWASM";
 import { NameAndType, NameNumberMap, NameStringMap, roundUp } from "./WebGPUCommon";
 import { WebGPUGlobal } from "./WebGPUStatis/WebGPUGlobal";
@@ -783,6 +784,10 @@ ${textureGLSL_fs}
         }
         //console.log(dstVS);
         //console.log(dstFS);
+
+        const glslFunc = new WebGPU_GLSLFunction();
+        glslFunc.extractFunctions(dstVS);
+        glslFunc.debugInfo();
 
         //转译成WGSL代码
         const wgsl_vs = this.naga.compileGLSL2WGSL(dstVS, 'vertex');
