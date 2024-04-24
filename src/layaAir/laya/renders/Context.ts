@@ -1,7 +1,8 @@
 import { ILaya } from "../../ILaya";
+import { Laya } from "../../Laya";
 import { Const } from "../Const";
+import { IRenderGeometryElement } from "../RenderDriver/DriverDesign/RenderDevice/IRenderGeometryElement";
 import { RenderState } from "../RenderDriver/RenderModuleData/Design/RenderState";
-import { RenderTargetFormat } from "../RenderEngine/RenderEnum/RenderTargetFormat";
 import { TextureFormat } from "../RenderEngine/RenderEnum/TextureFormat";
 import { Shader3D } from "../RenderEngine/RenderShader/Shader3D";
 import { Sprite } from "../display/Sprite";
@@ -27,7 +28,6 @@ import { WordText } from "../utils/WordText";
 import { BlendMode } from "../webgl/canvas/BlendMode";
 import { DrawStyle } from "../webgl/canvas/DrawStyle";
 import { Path } from "../webgl/canvas/Path";
-import { WebGLCacheAsNormalCanvas } from "../webgl/canvas/WebGLCacheAsNormalCanvas";
 import { ISaveData } from "../webgl/canvas/save/ISaveData";
 import { SaveBase } from "../webgl/canvas/save/SaveBase";
 import { SaveClipRect } from "../webgl/canvas/save/SaveClipRect";
@@ -42,7 +42,6 @@ import { BasePoly } from "../webgl/shapes/BasePoly";
 import { Earcut } from "../webgl/shapes/Earcut";
 import { SubmitBase } from "../webgl/submit/SubmitBase";
 import { SubmitKey } from "../webgl/submit/SubmitKey";
-import { CharRenderInfo } from "../webgl/text/CharRenderInfo";
 import { CharSubmitCache } from "../webgl/text/CharSubmitCache";
 import { MeasureFont } from "../webgl/text/MeasureFont";
 import { TextRender } from "../webgl/text/TextRender";
@@ -119,12 +118,12 @@ export class Context {
     /**@internal */
     _globalClipMatrix = defaultClipMatrix.clone();	//用矩阵描述的clip信息。最终的点投影到这个矩阵上，在0~1之间就可见。
     /**@internal */
-    _clipInCache = false; 	// 当前记录的clipinfo是在cacheas normal后赋值的，因为cacheas normal会去掉当前矩阵的tx，ty，所以需要记录一下，以便在是shader中恢复
-    /**@internal */
     _clipInfoID = 0;					//用来区分是不是clipinfo已经改变了
     private _clipID_Gen = 0;			//生成clipid的，原来是  _clipInfoID=++_clipInfoID 这样会有问题，导致兄弟clip的id都相同
     /**@internal */
     _curMat: Matrix;
+    /**@internal */
+    _matBuffer: Float32Array = new Float32Array(6);
 
     //计算矩阵缩放的缓存
     /**@internal */
@@ -176,7 +175,7 @@ export class Context {
     private _render2D: Render2D = null;
 
     private _clearColor = new Color(0,0,0,0);
-    private _clear=true;
+    private _clear=false;
 
     //temp
     //batchManager:RenderBatchManager2D=null;
@@ -281,31 +280,8 @@ export class Context {
         res.touch();
     }
 
-    /**@private */
-    clearRect(x: number, y: number, width: number, height: number): void {
-    }
-
-    /**@internal */
-    //TODO:coverage
-    _drawRect(x: number, y: number, width: number, height: number, style: any): void {
-        style && (this.fillStyle = style);
-        this.fillRect(x, y, width, height, null);
-    }
-
-    getImageData(x: number, y: number, width: number, height: number): any {
-        throw new Error("Method not implemented.");
-    }
-
     transformByMatrix(matrix: Matrix, tx: number, ty: number): void {
         this.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx + tx, matrix.ty + ty);
-    }
-
-    saveTransform(matrix: Matrix): void {
-        this.save();
-    }
-
-    restoreTransform(matrix: Matrix): void {
-        this.restore();
     }
 
     drawRect(x: number, y: number, width: number, height: number, fillColor: any, lineColor: any, lineWidth: number): void {
@@ -768,10 +744,6 @@ export class Context {
         Context._textRender!._fast_filltext(this, data, x, y, fontObj, color, strokeColor, lineWidth, textAlign);
     }
 
-    filltext11(data: string | WordText, x: number, y: number, fontStr: string, color: string, strokeColor: string, lineWidth: number, textAlign: string): void {
-        Context._textRender!.filltext(this, data, x, y, fontStr, color, strokeColor, lineWidth, textAlign);
-    }
-
     private _fillRect(x: number, y: number, width: number, height: number, rgba: number): void {
         var submit = this._curSubmit;
         var sameKey =
@@ -795,7 +767,8 @@ export class Context {
             if (!sameKey) {
                 submit = this._curSubmit = SubmitBase.create(this, mesh, Value2D.create(RenderSpriteData.Texture2D));
                 this.fillShaderValue(submit.shaderValue);
-                //this._copyClipInfo(submit, this._globalClipMatrix);
+                this._copyClipInfo(submit.shaderValue);
+                submit.clipInfoID = this._clipInfoID;
                 if (!this._lastTex || this._lastTex.destroyed) {
                     submit.shaderValue.textureHost = this.defTexture;
                 } else {
@@ -819,17 +792,7 @@ export class Context {
         this._fillRect(x, y, width, height, rgba);
     }
 
-    //TODO:coverage
     fillTexture(texture: Texture, x: number, y: number, width: number, height: number, type: string, offset: Point, color: number): void {
-        //test
-        /*
-        var aa = 95 / 274, bb = 136 / 341, cc = (95 + 41) / 274, dd = (136 + 48) / 341;
-        texture.uv = [aa,bb, cc,bb, cc,dd, aa,dd];
-        texture.width = 41;
-        texture.height = 48;
-        */
-        //test
-
         if (!texture._getSource()) {
             this.sprite && ILaya.systemTimer.callLater(this, this._repaintSprite);
             return;
@@ -838,7 +801,7 @@ export class Context {
     }
 
     /**@internal */
-    _fillTexture(texture: Texture, texw: number, texh: number, texuvRect: number[], x: number, y: number, width: number, height: number, type: string, offsetx: number, offsety: number, color: number): void {
+    private _fillTexture(texture: Texture, texw: number, texh: number, texuvRect: number[], x: number, y: number, width: number, height: number, type: string, offsetx: number, offsety: number, color: number): void {
         var submit = this._curSubmit;
         //这个不合并，直接渲染
         this._drawToRender2D(this._curSubmit);
@@ -907,7 +870,7 @@ export class Context {
             sv.u_TexRange = Vector4.tempVec4;
             submit = this._curSubmit = SubmitBase.create(this, this._mesh, sv);
             this.fillShaderValue(sv);
-            //this._copyClipInfo(submit, this._globalClipMatrix);
+            submit.clipInfoID = this._clipInfoID;
             submit.shaderValue.textureHost = texture;
             this._curSubmit._numEle += 6;
         }
@@ -968,31 +931,15 @@ export class Context {
     }
 
     /**@internal */
-    _copyClipInfo(shaderValue: Value2D, clipInfo: Matrix): void {
+    _copyClipInfo(shaderValue: Value2D): void {
+        let clipInfo = this._globalClipMatrix;
+        this._globalClipMatrix.copyTo(shaderValue.localClipMatrix);
         var cm = shaderValue.clipMatDir;
         cm.x = clipInfo.a; cm.y = clipInfo.b; cm.z = clipInfo.c; cm.w = clipInfo.d;
         shaderValue.clipMatDir = cm;
         var cmp = shaderValue.clipMatPos;
         cmp.x = clipInfo.tx; cmp.y = clipInfo.ty;
         shaderValue.clipMatPos = cmp;
-
-        if (this._clipInCache) {
-            shaderValue.clipOff.x = 1;
-            shaderValue.clipOff = shaderValue.clipOff;
-        }
-    }
-
-    _copyClipInfoToShaderValue(shaderValue: Value2D, clipInfo: Matrix): void {
-        var cm = shaderValue.clipMatDir;
-        cm.x = clipInfo.a; cm.y = clipInfo.b; cm.z = clipInfo.c; cm.w = clipInfo.d;
-        shaderValue.clipMatDir = cm;
-        var cmp = shaderValue.clipMatPos;
-        cmp.x = clipInfo.tx; cmp.y = clipInfo.ty;
-        shaderValue.clipMatPos = cmp;
-        if (this._clipInCache) {
-            shaderValue.clipOff.x = 1;
-            shaderValue.clipOff = shaderValue.clipOff;
-        }
     }
 
     //通用的部分的比较
@@ -1144,7 +1091,7 @@ export class Context {
             shaderValue.textureHost = tex;
             this._curSubmit = submit = SubmitBase.create(this, this._mesh, shaderValue);
             submit._key.other = imgid;
-            this._copyClipInfo(submit.shaderValue, this._globalClipMatrix);
+            this._copyClipInfo(submit.shaderValue);
             submit.clipInfoID = this._clipInfoID;
         }
         (this._mesh as MeshQuadTexture).addQuad(ops, uv, rgba, true);
@@ -1154,15 +1101,14 @@ export class Context {
 
     private fillShaderValue(shaderValue: Value2D) {
         shaderValue.size = new Vector2(this._width, this._height);
-        this._copyClipInfoToShaderValue(shaderValue, this._globalClipMatrix);
-
+        this._copyClipInfo(shaderValue);
     }
     /**
      * pt所描述的多边形完全在clip外边，整个被裁掉了
      * @param	pt
      * @return
      */
-    clipedOff(pt: any[]): boolean {
+    private clipedOff(pt: any[]): boolean {
         //TODO
         if (this._clipRect.width <= 0 || this._clipRect.height <= 0)
             return true;
@@ -1177,14 +1123,7 @@ export class Context {
      * @param	h
      * @param   italicDeg 倾斜角度，单位是度。0度无，目前是下面不动。以后要做成可调的
      */
-    transformQuad(x: number, y: number, w: number, h: number, italicDeg: number, m: Matrix, out: any[]): void {
-        /*
-        out[0] = 100.1; out[1] = 100.1;
-        out[2] = 101.1; out[3] = 100.1;
-        out[4] = 101.1; out[5] = 101.1;
-        out[6] = 100.1; out[7] = 101.1;
-        return;
-        */
+    private transformQuad(x: number, y: number, w: number, h: number, italicDeg: number, m: Matrix, out: any[]): void {
         var xoff = 0;
         if (italicDeg != 0) {
             xoff = Math.tan(italicDeg * Math.PI / 180) * h;
@@ -1239,7 +1178,6 @@ export class Context {
         this.stopMerge = true;
     }
 
-    //TODO:coverage
     private _repaintSprite(): void {
         this.sprite && this.sprite.repaint();
     }
@@ -1292,29 +1230,18 @@ export class Context {
             this.globalCompositeOperation = oldcomp;
     }
 
-    drawTarget(rt: RenderTexture2D, x: number, y: number, width: number, height: number, m: Matrix, shaderValue: Value2D, uv: ArrayLike<number> | null = null, blend = -1, color = 0xffffffff): boolean {
-        this._drawCount++;
-        //凡是这个都是在_mesh上操作，不用考虑samekey
-        this._drawToRender2D(this._curSubmit);
-        this._mesh = this._meshQuatTex;
-
-        this.transformQuad(x, y, width, height, 0, m || this._curMat, this._transedPoints);
-        if (!this.clipedOff(this._transedPoints)) {
-            (this._mesh as MeshQuadTexture).addQuad(this._transedPoints, uv || Texture.DEF_UV, color, true);
-            var submit = this._curSubmit = SubmitBase.create(this, this._mesh, shaderValue);
-            this.fillShaderValue(shaderValue);
-            submit.blendType = (blend == -1) ? this._nBlendType : blend;
-            this._copyClipInfo(submit.shaderValue, this._globalClipMatrix);
-            submit.clipInfoID = this._clipInfoID;
-            submit._numEle = 6;
-            //暂时drawTarget不合并
-            this._drawToRender2D(this._curSubmit);
-            this._curSubmit = SubmitBase.RENDERBASE
-            return true;
-        }
-        //暂时drawTarget不合并
-        this.stopMerge = true;
-        return false;
+    drawGeo(geo: IRenderGeometryElement, material: Material, x: number, y: number) {
+        let mat = this._curMat;
+        let buffer = this._matBuffer;
+        buffer[0] = mat.a;
+        buffer[1] = mat.b;
+        buffer[2] = mat.tx + mat.a * x + mat.c * y;
+        buffer[3] = mat.c;
+        buffer[4] = mat.d;
+        buffer[5] = mat.ty + mat.b * x + mat.d * y;
+        material.setBuffer("u_NMatrix", buffer);
+        material.setVector2("u_size",new Vector2(this._width,this._height));//TODO LAOGUO
+        this._render2D.drawMesh(geo, material);
     }
 
     drawTriangles(tex: Texture,
@@ -1363,7 +1290,7 @@ export class Context {
             this.fillShaderValue(submit.shaderValue);
             submit._key.submitType = SubmitBase.KEY_TRIANGLES;
             submit._key.other = webGLImg.id;
-            this._copyClipInfo(submit.shaderValue, this._globalClipMatrix);
+            this._copyClipInfo(submit.shaderValue);
             submit.clipInfoID = this._clipInfoID;
         }
 
@@ -1453,9 +1380,6 @@ export class Context {
                 cm.b = cm.c = 0;
                 cm.d = this._clipRect.height;
             }
-            if (this._incache) {
-                this._clipInCache = true;
-            }
         }
 
         //TEMP 处理clip交集问题，这里有点问题，无法处理旋转,翻转
@@ -1496,7 +1420,6 @@ export class Context {
         this.flush();
         this._render2D.renderEnd();
         this._curSubmit = SubmitBase.RENDERBASE;
-
     }
 
     //合并mesh之后，最后一点数据还没有渲染，这里强制渲染
@@ -1507,11 +1430,8 @@ export class Context {
 
     flush() {
         this.drawLeftData();
-
         this._clipID_Gen = 0;
-        //var ret = this.submitElement(0, this._submits._length);
         this._path && this._path.reset();
-        //Stat.mesh2DNum += meshlist.length;
         this._curSubmit = SubmitBase.RENDERBASE;
         this._flushCnt++;
         //charbook gc
@@ -1645,7 +1565,7 @@ export class Context {
         //submit._key.clear();
         //submit._key.blendShader = _submitKey.blendShader;	//TODO 这个在哪里赋值的啊
         submit._key.submitType = SubmitBase.KEY_VG;
-        this._copyClipInfo(submit.shaderValue, this._globalClipMatrix);
+        this._copyClipInfo(submit.shaderValue);
         submit.clipInfoID = this._clipInfoID;
         return submit;
     }
@@ -2276,8 +2196,4 @@ class ContextParams {
         return this === ContextParams.DEFAULT ? new ContextParams() : this;
     }
 }
-// native
-if ((window as any).conch && !(window as any).conchConfig.conchWebGL) {
-    //@ts-ignore
-    //lvtodoContext = NativeContext;
-}
+

@@ -25,6 +25,7 @@ export class GLESDrawNodeCMDData extends DrawNodeCMDData {
     protected _node: RTBaseRenderNode;
     protected _destShaderData: GLESShaderData;
     protected _destSubShader: SubShader;
+    protected _subMeshIndex: number;
 
     /**@internal */
     _nativeObj: any;
@@ -54,6 +55,15 @@ export class GLESDrawNodeCMDData extends DrawNodeCMDData {
     set destSubShader(value: SubShader) {
         this._destSubShader = value;
         this._nativeObj.setSubShader((value.moduleData as any as RTSubShader)._nativeObj);
+    }
+
+    get subMeshIndex(): number {
+        return this._subMeshIndex;
+    }
+
+    set subMeshIndex(value: number) {
+        this._subMeshIndex = value;
+        this._nativeObj.setSubMeshIndex(value);
     }
 
     constructor() {
@@ -109,8 +119,8 @@ export class GLESBlitQuadCMDData extends BlitQuadCMDData {
     set source(value: GLESInternalTex) {
         this._source = value;
         this._nativeObj.setSource(value);
-        this._sourceTexelSize.setValue(1.0 / this._source.width, 1.0 / this._source.height, this._source.width, this._source.height);
-        this._nativeObj.setSourceTexelSize(this._sourceTexelSize);
+        // this._sourceTexelSize.setValue(1.0 / this._source.width, 1.0 / this._source.height, this._source.width, this._source.height);
+        // this._nativeObj.setSourceTexelSize(this._sourceTexelSize);
     }
 
     get offsetScale(): Vector4 {
@@ -329,13 +339,13 @@ export class GLESSetRenderData extends SetRenderDataCMD {
                 this._nativeObj.setBool(this.value)
                 break;
             case ShaderDataType.Matrix4x4:
-                this.data_mat && (this.data_mat = new Matrix4x4());
+                !this.data_mat && (this.data_mat = new Matrix4x4());
                 (value as Matrix4x4).cloneTo(this.data_mat);
                 this._value = this.data_mat;
                 this._nativeObj.setMatrix4x4(this.value)
                 break;
             case ShaderDataType.Color:
-                this.data_Color && (this.data_Color = new Color());
+                !this.data_Color && (this.data_Color = new Color());
                 (value as Color).cloneTo(this.data_Color);
                 this._value = this.data_Color;
                 this._nativeObj.setColor(this.value)
@@ -345,19 +355,19 @@ export class GLESSetRenderData extends SetRenderDataCMD {
                 this._nativeObj.setTexture2D((this.data_texture._texture as GLESInternalTex))
                 break;
             case ShaderDataType.Vector4:
-                this.data_v4 && (this.data_v4 = new Vector4());
+                !this.data_v4 && (this.data_v4 = new Vector4());
                 (value as Vector4).cloneTo(this.data_v4);
                 this._value = this.data_v4;
                 this._nativeObj.setVector(this.value)
                 break;
             case ShaderDataType.Vector2:
-                this.data_v2 && (this.data_v2 = new Vector2());
+                !this.data_v2 && (this.data_v2 = new Vector2());
                 (value as Vector2).cloneTo(this.data_v2);
                 this._value = this.data_v2;
                 this._nativeObj.setVector2(this.value)
                 break;
             case ShaderDataType.Vector3:
-                this.data_v3 && (this.data_v3 = new Vector3());
+                !this.data_v3 && (this.data_v3 = new Vector3());
                 (value as Vector3).cloneTo(this.data_v3);
                 this._value = this.data_v3;
                 this._nativeObj.setVector3(this.value);

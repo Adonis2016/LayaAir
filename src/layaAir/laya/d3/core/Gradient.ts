@@ -245,50 +245,49 @@ export class Gradient implements IClone {
                     out.b = rgbElements[offset + 3];
                     return curIndex;
                 }
-
-                switch (this._mode) {
-                    case GradientMode.Blend:
-                        if (lerpFactor > left) {
-                            var right: number = rgbElements[offset + 4];
-                            if (lerpFactor > right)
-                                throw "Gradient:wrong startSearchIndex.";
-                            var diff: number = right - left;
-                            var y1: number = right - lerpFactor;
-                            var y2: number = lerpFactor - left;
-                            out.r = (y1 * rgbElements[offset + 1] + y2 * rgbElements[offset + 5]) / diff;
-                            out.g = (y1 * rgbElements[offset + 2] + y2 * rgbElements[offset + 6]) / diff;
-                            out.b = (y1 * rgbElements[offset + 3] + y2 * rgbElements[offset + 7]) / diff;
-                            return curIndex;
-                        } else {
-                            curIndex--;
-                            continue;
-                        }
-                    case GradientMode.Fixed:
-                        if (lerpFactor > left) {
-                            if (lerpFactor > rgbElements[offset + 4])
-                                throw "Gradient:wrong startSearchIndex.";
-                            out.r = rgbElements[offset + 5];
-                            out.g = rgbElements[offset + 6];
-                            out.b = rgbElements[offset + 7];
-                            return curIndex;
-                        } else {
-                            curIndex--;
-                            continue;
-                        }
-                    default:
-                        throw "Gradient:unknown mode.";
-                }
-            }
-        } else {
-            for (var i: number = 0, n: number = this._rgbElements.length; i < n; i++) {
-                offset = i * 4;
-                var right: number = rgbElements[offset];
-                if (lerpFactor === right) {
-                    out.r = rgbElements[offset + 1];
-                    out.g = rgbElements[offset + 2];
-                    out.b = rgbElements[offset + 3];
-                    return curIndex;
-                }
+				var right: number = rgbElements[offset + 4];
+				switch (this._mode) {
+					case GradientMode.Blend:
+						if (lerpFactor > left && right) {
+							if (lerpFactor > right)
+								continue;
+							var diff: number = right - left;
+							var y1: number = right - lerpFactor;
+							var y2: number = lerpFactor - left;
+							out.r = (y1 * rgbElements[offset + 1] + y2 * rgbElements[offset + 5]) / diff;
+							out.g = (y1 * rgbElements[offset + 2] + y2 * rgbElements[offset + 6]) / diff;
+							out.b = (y1 * rgbElements[offset + 3] + y2 * rgbElements[offset + 7]) / diff;
+							return curIndex;
+						} else {
+							curIndex--;
+							continue;
+						}
+					case GradientMode.Fixed:
+						if (lerpFactor > left) {
+							if (lerpFactor > rgbElements[offset + 4])
+								throw "Gradient:wrong startSearchIndex.";
+							out.r = rgbElements[offset + 5];
+							out.g = rgbElements[offset + 6];
+							out.b = rgbElements[offset + 7];
+							return curIndex;
+						} else {
+							curIndex--;
+							continue;
+						}
+					default:
+						throw "Gradient:unknown mode.";
+				}
+			}
+		} else {
+			for (var i: number = 0, n: number = this._rgbElements.length; i < n; i++) {
+				offset = i * 4;
+				var right: number = rgbElements[offset];
+				if (lerpFactor === right) {
+					out.r = rgbElements[offset + 1];
+					out.g = rgbElements[offset + 2];
+					out.b = rgbElements[offset + 3];
+					return curIndex;
+				}
 
                 switch (this._mode) {
                     case GradientMode.Blend:
@@ -348,14 +347,12 @@ export class Gradient implements IClone {
                     outColor.a = alphaElements[offset + 1];
                     return curIndex;
                 }
-
-                switch (this._mode) {
-                    case GradientMode.Blend:
-                        if (lerpFactor > left) {
-                            var right: number = alphaElements[offset + 4];
-                            if (lerpFactor > right)
-                                throw "Gradient:wrong startSearchIndex.";
-
+				var right: number = alphaElements[offset + 2];
+				switch (this._mode) {
+					case GradientMode.Blend:
+						if (lerpFactor > left && right) {
+							if (lerpFactor > right)
+								continue;
                             var diff: number = right - left;
                             var x1: number = right - lerpFactor;
                             var x2: number = lerpFactor - left;

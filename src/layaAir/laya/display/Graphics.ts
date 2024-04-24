@@ -40,6 +40,8 @@ import { DrawEllipseCmd } from "./cmd/DrawEllipseCmd";
 import { DrawRoundRectCmd } from "./cmd/DrawRoundRectCmd";
 import { LayaGL } from "../layagl/LayaGL";
 import { ShaderDataType } from "../RenderDriver/DriverDesign/RenderDevice/ShaderData";
+import { DrawGeoCmd } from "./cmd/DrawGeoCmd";
+import { IRenderGeometryElement } from "../RenderDriver/DriverDesign/RenderDevice/IRenderGeometryElement";
 
 /**
  * <code>Graphics</code> 类用于创建绘图显示对象。Graphics可以同时绘制多个位图或者矢量图，还可以结合save，restore，transform，scale，rotate，translate，alpha等指令对绘图效果进行变化。
@@ -301,6 +303,15 @@ export class Graphics {
         if (!texture) return null;
         return this.addCmd(DrawTexturesCmd.create(texture, pos, colors));
     }
+    /**
+     * 
+     * @param geo 
+     * @param material 
+     * @returns 
+     */
+    drawGeo(geo: IRenderGeometryElement, material:Material){
+        return this.addCmd(DrawGeoCmd.create(geo, material));
+    }
 
     /**
      * 绘制一组三角形
@@ -515,6 +526,7 @@ export class Graphics {
         for (let i = 0, n = cmds.length; i < n; i++) {
             cmds[i].run(context, x, y);
         }
+        context.material = null;
     }
 
     /**
@@ -524,6 +536,7 @@ export class Graphics {
         context.sprite = sprite;
         context.material = this._material;
         this._cmds[0].run(context, x, y);
+        context.material = null;
     }
 
     /**

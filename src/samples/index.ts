@@ -61,11 +61,11 @@ Resource.DEBUG = true;
 //new RealTimeShadow_WebGPU(); //OK
 //new SpotLightDemo_WebGPU(); //OK
 //new PointLightDemo_WebGPU(); //OK
-new Particle_EternalLight_WebGPU(); //OK
+//new Particle_EternalLight_WebGPU(); //OK
 //new Particle_BurningGround_WebGPU(); //OK
 //new Shader_MultiplePassOutline_WebGPU(); //OK
 //new Shader_Terrain_WebGPU(); //OK
-//new Shader_GlowingEdge_WebGPU(); //OK
+new Shader_GlowingEdge_WebGPU(); //OK
 //new SkinAnimationPerformance_WebGPU(); //OK
 //new HalfFloatTexture_WebGPU(); //OK
 //new LightmapScene_WebGPU(); //OK（Without KTX）

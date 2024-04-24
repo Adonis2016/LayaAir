@@ -30,6 +30,7 @@ export class WebSceneNodeData implements ISceneNodeData {
 
 
 export class WebSubShader implements ISubshaderData {
+    enableInstance: boolean;
     destroy(): void {
         throw new Error("Method not implemented.");
     }
@@ -126,7 +127,7 @@ export class WebShaderPass implements IShaderPassData {
         return shader;
     }
 
-    destory(): void {
+    destroy(): void {
         //删除所有shader TODO
     }
 

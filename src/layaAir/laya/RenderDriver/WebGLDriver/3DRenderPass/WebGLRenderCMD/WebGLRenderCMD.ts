@@ -22,9 +22,11 @@ import { WebGLRenderElement3D } from "../WebGLRenderElement3D";
 
 export class WebGLDrawNodeCMDData extends DrawNodeCMDData {
     type: RenderCMDType;
+
     protected _node: WebBaseRenderNode;
     protected _destShaderData: WebGLShaderData;
     protected _destSubShader: SubShader;
+    protected _subMeshIndex: number;
 
     get node(): WebBaseRenderNode {
         return this._node;
@@ -50,6 +52,14 @@ export class WebGLDrawNodeCMDData extends DrawNodeCMDData {
         this._destSubShader = value;
     }
 
+    get subMeshIndex(): number {
+        return this._subMeshIndex;
+    }
+
+    set subMeshIndex(value: number) {
+        this._subMeshIndex = value;
+    }
+
     constructor() {
         super();
         this.type = RenderCMDType.DrawNode;
@@ -57,16 +67,28 @@ export class WebGLDrawNodeCMDData extends DrawNodeCMDData {
 
     apply(context: WebGLRenderContext3D): void {
         this.node._renderUpdatePre(context);
-        let elements = this.node.renderelements;
-        elements.forEach(element => {
-            let oriSubmesh = element.subShader;
+        if (this.subMeshIndex == -1) {
+            this.node.renderelements.forEach(element => {
+                let oriSubShader = element.subShader;
+                let oriMatShaderData = element.materialShaderData;
+                element.subShader = this._destSubShader;
+                element.materialShaderData = this._destShaderData;
+                context.drawRenderElementOne(element as WebGLRenderElement3D);
+                element.subShader = oriSubShader;
+                element.materialShaderData = oriMatShaderData;
+            });
+        }
+        else {
+            let element = this.node.renderelements[this.subMeshIndex];
+            let oriSubShader = element.subShader;
             let oriMatShaderData = element.materialShaderData;
             element.subShader = this._destSubShader;
             element.materialShaderData = this._destShaderData;
             context.drawRenderElementOne(element as WebGLRenderElement3D);
-            element.subShader = oriSubmesh;
+            element.subShader = oriSubShader;
             element.materialShaderData = oriMatShaderData;
-        });
+        }
+
     }
 }
 
@@ -207,6 +229,9 @@ export class WebGLSetViewportCMD extends SetViewportCMD {
         context.setScissor(this.scissor);
     }
 }
+
+const viewport = new Viewport();
+const scissor = new Vector4();
 export class WebGLSetRenderTargetCMD extends SetRenderTargetCMD {
     type: RenderCMDType;
     protected _rt: InternalRenderTarget;
@@ -263,6 +288,15 @@ export class WebGLSetRenderTargetCMD extends SetRenderTargetCMD {
     apply(context: WebGLRenderContext3D): void {
         context.setRenderTarget(this.rt, RenderClearFlag.Nothing);
         context.setClearData(this.clearFlag, this.clearColorValue, this.clearDepthValue, this.clearStencilValue);
+
+        if (this.rt) {
+            // todo
+            viewport.set(0, 0, this.rt._textures[0].width, this.rt._textures[0].height);
+            scissor.setValue(0, 0, this.rt._textures[0].width, this.rt._textures[0].height);
+            context.setViewPort(viewport);
+            context.setScissor(scissor);
+        }
+
     }
 }
 export class WebGLSetRenderData extends SetRenderDataCMD {

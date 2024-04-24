@@ -78,8 +78,6 @@ export class WebGPUDirectLightShadowRP {
     /** @internal */
     private _shadowMapSize: Vector4 = new Vector4();
     /** @internal */
-    private _shadowParams: Vector4 = new Vector4();
-    /** @internal */
     private _shadowBias: Vector4 = new Vector4();
     /** @internal */
     private _cascadeCount: number = 0;
@@ -124,6 +122,10 @@ export class WebGPUDirectLightShadowRP {
         }
     }
 
+    get light(): WebDirectLight {
+        return this._light;
+    }
+
     constructor() {
         this._lightUp = new Vector3();
         this._lightSide = new Vector3();
@@ -164,8 +166,8 @@ export class WebGPUDirectLightShadowRP {
             if (this._cascadeCount > 1)
                 ShadowUtils.applySliceTransform(sliceData, this._shadowMapWidth, this._shadowMapHeight, i, shadowMatrices);
         }
-        ShadowUtils.prepareShadowReceiverShaderValues(light.shadowStrength, this._shadowMapWidth, this._shadowMapHeight,
-            this._shadowSliceDatas, this._cascadeCount, this._shadowMapSize, this._shadowParams, shadowMatrices, boundSpheres);
+        ShadowUtils.prepareShadowReceiverShaderValues(this._shadowMapWidth, this._shadowMapHeight, this._shadowSliceDatas,
+            this._cascadeCount, this._shadowMapSize, shadowMatrices, boundSpheres);
     }
 
     /**
@@ -259,7 +261,6 @@ export class WebGPUDirectLightShadowRP {
         }
         sceneData.setBuffer(ShadowCasterPass.SHADOW_MATRICES, this._shadowMatrices);
         sceneData.setVector(ShadowCasterPass.SHADOW_MAP_SIZE, this._shadowMapSize);
-        sceneData.setVector(ShadowCasterPass.SHADOW_PARAMS, this._shadowParams);
         sceneData.setBuffer(ShadowCasterPass.SHADOW_SPLIT_SPHERES, this._splitBoundSpheres);
     }
 

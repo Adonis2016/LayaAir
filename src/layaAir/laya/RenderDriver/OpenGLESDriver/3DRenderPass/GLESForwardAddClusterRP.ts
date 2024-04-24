@@ -107,7 +107,7 @@ export class GLESForwardAddClusterRP {
     }
     public set camera(value: RTCameraNodeData) {
         this._camera = value;
-        this._nativeObj.setCameraNodeData(value);
+        this._nativeObj.setCameraNodeData(value._nativeObj);
     }
     private _clearColor: Color;
     public get clearColor(): Color {
@@ -180,7 +180,7 @@ export class GLESForwardAddClusterRP {
             this._nativeObj.clearBeforeTransparentCmds();
             value.forEach(element => {
                 element._apply(false);
-                this._nativeObj.setAddBeforeTransparentCmds(this._getRenderCMDArray(element._renderCMDs));
+                this._nativeObj.addBeforeTransparentCmds(this._getRenderCMDArray(element._renderCMDs));
             });
         } else {
             this._nativeObj.clearBeforeTransparentCmds();

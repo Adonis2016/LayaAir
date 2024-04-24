@@ -5,7 +5,6 @@ import { UnifromBufferData } from "../../../RenderEngine/UniformBufferData";
 import { UniformBufferObject } from "../../../RenderEngine/UniformBufferObject";
 import { BaseCamera } from "../../../d3/core/BaseCamera";
 import { ShadowMode } from "../../../d3/core/light/ShadowMode";
-import { SpotLightCom } from "../../../d3/core/light/SpotLightCom";
 import { CommandBuffer } from "../../../d3/core/render/command/CommandBuffer";
 import { Scene3DShaderDeclaration } from "../../../d3/core/scene/Scene3DShaderDeclaration";
 import { Viewport } from "../../../d3/math/Viewport";
@@ -89,8 +88,6 @@ export class WebGPUSpotLightShadowRP {
     /** @internal */
     private _shadowSpotData: ShadowSpotData;
     /** @internal */
-    private _shadowParams: Vector4;
-    /** @internal */
     private _shadowSpotMapSize: Vector4 = new Vector4();
     /** @internal */
     private _shadowSpotMatrices: Matrix4x4 = new Matrix4x4();
@@ -100,23 +97,26 @@ export class WebGPUSpotLightShadowRP {
     /** @internal */
     private _renderQueue: RenderListQueue;
 
-    set light(value: SpotLightCom) {
-        this._light = value._getRenderDataModule() as WebSpotLight;
+    set light(value: WebSpotLight) {
+        this._light = value;
         this._shadowResolution = this._light.shadowResolution;
         this._lightWorldMatrix = this._light.getWorldMatrix(this._lightWorldMatrix);
         this._lightPos = this._light.transform.position;
         this._spotAngle = this._light.spotAngle;
         this._spotRange = this._light.spotRange;
         this._shadowStrength = this._light.shadowStrength;
-        //this.destTarget && RenderTexture.recoverToPool(this.destTarget); //TODO 优化
+        // this.destTarget && RenderTexture.recoverToPool(this.destTarget);// TODO 优化
         //this.destTarget = ShadowUtils.getTemporaryShadowTexture(this._shadowResolution, this._shadowResolution, ShadowMapFormat.bit16);
+    }
+
+    get light(): WebSpotLight {
+        return this._light;
     }
 
     constructor() {
         this._renderQueue = new RenderListQueue(false);
         this._shadowSpotData = new ShadowSpotData();
         this._lightWorldMatrix = new Matrix4x4();
-        this._shadowParams = new Vector4();
         this._shadowBias = new Vector4();
     }
 
@@ -126,7 +126,7 @@ export class WebGPUSpotLightShadowRP {
      */
     update(context: WebGPURenderContext3D) {
         const shadowSpotData = this._shadowSpotData;
-        this._getSpotLightShadowData(shadowSpotData, this._shadowResolution, this._shadowParams, this._shadowSpotMatrices, this._shadowSpotMapSize);
+        this._getSpotLightShadowData(shadowSpotData, this._shadowResolution, this._shadowSpotMatrices, this._shadowSpotMapSize);
     }
 
     /**
@@ -144,7 +144,7 @@ export class WebGPUSpotLightShadowRP {
         context.saveViewPortAndScissor();
 
         this._getShadowBias(shadowSpotData.resolution, this._shadowBias);
-        this._setupShadowCasterShaderValues(shaderData, shadowSpotData, this._shadowParams, this._shadowBias);
+        this._setupShadowCasterShaderValues(shaderData, shadowSpotData, this._shadowBias);
         RenderCullUtil.cullSpotShadow(shadowSpotData.cameraCullInfo, list, count, this._renderQueue, context);
         context.cameraData = shadowSpotData.cameraShaderData;
         context.cameraUpdateMask++;
@@ -170,7 +170,7 @@ export class WebGPUSpotLightShadowRP {
     /** 
      * @internal
      */
-    private _getSpotLightShadowData(shadowSpotData: ShadowSpotData, resolution: number, shadowParams: Vector4, shadowSpotMatrices: Matrix4x4, shadowMapSize: Vector4) {
+    private _getSpotLightShadowData(shadowSpotData: ShadowSpotData, resolution: number, shadowSpotMatrices: Matrix4x4, shadowMapSize: Vector4) {
         const out = shadowSpotData.position = this._lightPos;
         shadowSpotData.resolution = resolution;
         shadowMapSize.setValue(1 / resolution, 1 / resolution, resolution, resolution);
@@ -184,7 +184,6 @@ export class WebGPUSpotLightShadowRP {
         const BoundFrustum = shadowSpotData.cameraCullInfo.boundFrustum;
         spotWorldMatrix.invert(viewMatrix);
         Matrix4x4.createPerspective(3.14159 * this._spotAngle / 180, 1, 0.1, this._spotRange, projectMatrix);
-        shadowParams.y = this._shadowStrength;
         Matrix4x4.multiply(projectMatrix, viewMatrix, viewProjectMatrix);
         BoundFrustum.matrix = viewProjectMatrix;
         viewProjectMatrix.cloneTo(shadowSpotMatrices);
@@ -230,9 +229,8 @@ export class WebGPUSpotLightShadowRP {
      * @param shadowParams 
      * @param shadowBias 
      */
-    private _setupShadowCasterShaderValues(shaderData: WebGPUShaderData, shadowSliceData: ShadowSpotData, shadowParams: Vector4, shadowBias: Vector4) {
+    private _setupShadowCasterShaderValues(shaderData: WebGPUShaderData, shadowSliceData: ShadowSpotData, shadowBias: Vector4): void {
         shaderData.setVector(ShadowCasterPass.SHADOW_BIAS, shadowBias);
-        shaderData.setVector(ShadowCasterPass.SHADOW_PARAMS, shadowParams);
         shaderData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
         const cameraData = shadowSliceData.cameraShaderData;
         cameraData.setMatrix4x4(BaseCamera.VIEWMATRIX, shadowSliceData.viewMatrix);
@@ -272,6 +270,5 @@ export class WebGPUSpotLightShadowRP {
         }
         sceneData.setMatrix4x4(ShadowCasterPass.SHADOW_SPOTMATRICES, this._shadowSpotMatrices);
         sceneData.setVector(ShadowCasterPass.SHADOW_SPOTMAP_SIZE, this._shadowSpotMapSize);
-        sceneData.setVector(ShadowCasterPass.SHADOW_PARAMS, this._shadowParams);
     }
 }

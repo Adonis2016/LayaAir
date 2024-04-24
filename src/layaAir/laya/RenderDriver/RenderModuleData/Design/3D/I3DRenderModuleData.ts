@@ -53,11 +53,6 @@ export interface IBaseRenderNode {
     set_renderUpdatePreCall(call: any, fun: any): void;
     set_caculateBoundingBox(call: any, fun: any): void;
 
-    /**
-     * @internal
-     * @param value 
-     */
-    setWorldParams(value: Vector4): void;
 
     /**
      * @internal
@@ -212,6 +207,7 @@ export interface ISceneNodeData {
 //shader
 export interface ISubshaderData {
     addShaderPass(pass: IShaderPassData): void;
+    enableInstance:boolean;
     destroy(): void;
 }
 
@@ -224,6 +220,6 @@ export interface IShaderPassData {
     renderState: RenderState;
     setCacheShader(defines: IDefineDatas, shaderInstance: IShaderInstance): void;
     getCacheShader(defines: IDefineDatas): IShaderInstance;
-    destory(): void;
+    destroy(): void;
 }
 

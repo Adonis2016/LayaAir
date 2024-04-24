@@ -102,10 +102,10 @@ export class BaseRender extends Component {
     }
 
     /**
-     * change vertex shaderDefine
-     * @param oldMesh 
-     * @param mesh 
-     * @param defineDatas 
+     * 更改顶点宏定义
+     * @param oldMesh 旧Mesh 
+     * @param mesh 新Mesh
+     * @param defineDatas 数据  
      */
     static changeVertexDefine(oldMesh: Mesh, mesh: Mesh, defineDatas: ShaderData) {
 
@@ -123,7 +123,7 @@ export class BaseRender extends Component {
     }
 
     /**
-     * define Init
+     * 宏定义初始化
      */
     static shaderValueInit() {
         Sprite3DRenderDeclaration.SHADERDEFINE_GI_LEGACYIBL = Shader3D.getDefineByName("GI_LEGACYIBL");
@@ -201,24 +201,24 @@ export class BaseRender extends Component {
         this._baseRenderNode.enable = value;
     }
 
+    get enabled(): boolean {
+        return super.enabled;
+    }
+
     /**排序矫正值。*/
     set sortingFudge(value: number) {
         this._baseRenderNode.sortingFudge = value;
     }
 
-    get sortingFudge() {
-        return this._baseRenderNode.sortingFudge;
-    }
-
     /**
-     * 渲染标签
+     * 获取渲染节点的渲染禁用位
      */
     get renderbitFlag() {
         return this._baseRenderNode.renderbitFlag;
     }
 
     /**
-     * 包围盒改动
+     * 包围盒是否更新
      */
     set boundsChange(value: boolean) {
         this._baseRenderNode.boundsChange = value
@@ -231,12 +231,15 @@ export class BaseRender extends Component {
     /**
      * 渲染数据
      */
+    /**
+     * 获取渲染节点
+     */
     get renderNode(): IBaseRenderNode {
         return this._baseRenderNode;
     }
 
     /**
-     * 内部计算的距离排序值
+     * 排序距离
      */
     set distanceForSort(value: number) {
         this._baseRenderNode.distanceForSort = value;
@@ -404,8 +407,9 @@ export class BaseRender extends Component {
         this._baseRenderNode.reflectionMode = value;
     }
 
-
-
+    /**
+     * 体积光探针
+     */
     /**
      * 获得所属包围盒
      */
@@ -535,7 +539,8 @@ export class BaseRender extends Component {
     }
 
     /**
-     * overrid it
+     * @internal
+     * @protected
      * @returns 
      */
     protected _getcommonUniformMap(): Array<string> {
@@ -543,7 +548,8 @@ export class BaseRender extends Component {
     }
 
     /**
-     * override it
+     * @internal
+     * @protected
      * @returns 
      */
     protected _createBaseRenderNode(): IBaseRenderNode {
@@ -559,8 +565,8 @@ export class BaseRender extends Component {
     }
 
     /**
-     * overrid it
      * @internal
+     * @protected
      */
     protected _onAdded(): void {
         this._transform = (this.owner as Sprite3D).transform;
@@ -572,8 +578,8 @@ export class BaseRender extends Component {
     }
 
     /**
-     * overrid it
      * @internal
+     * @protected
      */
     protected _onEnable(): void {
         super._onEnable();
@@ -589,8 +595,8 @@ export class BaseRender extends Component {
     }
 
     /**
-     * override it
      * @internal
+     * @protected
      */
     protected _onDisable(): void {
         if (this.owner) {
@@ -662,7 +668,7 @@ export class BaseRender extends Component {
      */
     private _changeMaterialReference(lastValue: Material, value: Material): void {
         (lastValue) && (lastValue._removeReference());
-        value._addReference();//TODO:value可以为空
+        (value) && (value._addReference());//TODO:value可以为空
     }
 
     /**
@@ -788,8 +794,9 @@ export class BaseRender extends Component {
         this._isSupportRenderFeature();
     }
     /**
-     * @deprecated
-     * 潜拷贝实例材质列表,第一次使用会拷贝实例对象。
+     * @internal
+     * @override
+     * @param dest 
      */
     get materials(): Material[] {
         for (var i: number = 0, n: number = this._sharedMaterials.length; i < n; i++) {

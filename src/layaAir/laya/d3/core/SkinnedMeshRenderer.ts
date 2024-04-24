@@ -7,7 +7,6 @@ import { MeshRenderer } from "./MeshRenderer";
 import { Sprite3D } from "./Sprite3D";
 import { RenderContext3D } from "./render/RenderContext3D";
 import { SkinnedMeshSprite3DShaderDeclaration } from "./SkinnedMeshSprite3DShaderDeclaration";
-import { Component } from "../../components/Component";
 import { SkinRenderElement } from "./render/SkinRenderElement";
 import { Material } from "../../resource/Material";
 import { BlinnPhongMaterial } from "./material/BlinnPhongMaterial";
@@ -21,6 +20,7 @@ import { Vector4 } from "../../maths/Vector4";
 import { Transform3D } from "./Transform3D";
 import { BaseRenderType, IBaseRenderNode } from "../../RenderDriver/RenderModuleData/Design/3D/I3DRenderModuleData";
 import { IRenderContext3D } from "../../RenderDriver/DriverDesign/3DRenderPass/I3DRenderPass";
+import { RenderElement } from "./render/RenderElement";
 /**
  * <code>SkinMeshRenderer</code> 类用于蒙皮渲染器。
  */
@@ -31,6 +31,7 @@ export class SkinnedMeshRenderer extends MeshRenderer {
     /**@internal */
     protected _cacheMesh: Mesh;
 
+    /**@internal */
     _bones: Sprite3D[] = [];
 
     /**@internal */
@@ -115,7 +116,7 @@ export class SkinnedMeshRenderer extends MeshRenderer {
      */
     constructor() {
         super();
-        this._localBounds = new Bounds(Vector3.ZERO, Vector3.ZERO);
+        this.localBounds = new Bounds(Vector3.ZERO, Vector3.ZERO);
         this._baseRenderNode.shaderData.addDefine(SkinnedMeshSprite3DShaderDeclaration.SHADERDEFINE_BONE);
         this._baseRenderNode.renderNodeType = BaseRenderType.SkinnedMeshRender;
     }
@@ -169,55 +170,6 @@ export class SkinnedMeshRenderer extends MeshRenderer {
         }
     }
 
-    protected _computeSkinnedDataForNative(): void {
-        if (this._cacheMesh) {
-            var bindPoses: Matrix4x4[] = this._cacheMesh._inverseBindPoses;
-            var pathMarks: skinnedMatrixCache[] = this._cacheMesh._skinnedMatrixCaches;
-            if (this._inverseBindPosesBufferForNative == null) {
-                this._inverseBindPosesBufferForNative = new Float32Array(bindPoses.length * 16);
-                var offset: number = 0;
-                for (var i: number = 0, n: number = bindPoses.length; i < n; i++) {
-                    this._inverseBindPosesBufferForNative.set(bindPoses[i].elements, offset);
-                    offset += 16;
-                }
-            }
-            if (this._skinnedMatrixCachesBufferForNative == null) {
-                this._skinnedMatrixCachesBufferForNative = new Int32Array(pathMarks.length * 3);
-                var j: number = 0;
-                for (var i: number = 0, n: number = pathMarks.length; i < n; i++) {
-                    if (!pathMarks[i]) {
-                        break;
-                    }
-                    this._skinnedMatrixCachesBufferForNative[j] = pathMarks[i].subMeshIndex;
-                    this._skinnedMatrixCachesBufferForNative[j + 1] = pathMarks[i].batchIndex;
-                    this._skinnedMatrixCachesBufferForNative[j + 2] = pathMarks[i].batchBoneIndex;
-                    j += 3;
-                }
-            }
-            if (this._bonesTransformForNative == null) {
-                this._bonesTransformForNative = [];
-                for (var i: number = 0, n: number = this._bones.length; i < n; i++) {
-                    let bone = this._bones[i];
-                    if (bone) {
-                        this._bonesTransformForNative[i] = (bone.transform as any)._nativeObj;
-                    }
-                    else {
-                        this._bonesTransformForNative[i] = null;
-                    }
-                }
-            }
-
-            for (var i: number = 0, n: number = this._cacheMesh.subMeshCount; i < n; i++) {
-                var subMeshBoneIndices: Uint16Array[] = ((<SubMesh>this._cacheMesh.getSubMesh(i)))._boneIndicesList;
-                var subData: Float32Array[] = this._skinnedData[i];
-                for (var j: number = 0, m: number = subMeshBoneIndices.length; j < m; j++) {
-                    var boneIndices: Uint16Array = subMeshBoneIndices[j];
-                    (window as any).conch.computeSubSkinnedDataForNative(this._inverseBindPosesBufferForNative, boneIndices, subData[j], this._skinnedMatrixCachesBufferForNative, this._bonesTransformForNative, this._skinnedDataLoopMarks, this._skinnedData);
-                }
-            }
-        }
-    }
-
     /**
     * @inheritDoc
     * @internal
@@ -234,7 +186,7 @@ export class SkinnedMeshRenderer extends MeshRenderer {
      *@override
      *@internal
      */
-    _createRenderElement(): SkinRenderElement {
+    _createRenderElement(): RenderElement {
         let renderelement = new SkinRenderElement();
         return renderelement;
     }
@@ -249,10 +201,10 @@ export class SkinnedMeshRenderer extends MeshRenderer {
             var count: number = mesh.subMeshCount;
             this._renderElements.length = count;
             for (var i: number = 0; i < count; i++) {
-                var renderElement: SkinRenderElement = this._renderElements[i];
+                let renderElement: RenderElement = this._renderElements[i];
                 if (!renderElement) {
                     var material: Material = this.sharedMaterials[i];
-                    renderElement = this._renderElements[i] = this._renderElements[i] ? this._renderElements[i] : this._createRenderElement();
+                    renderElement = this._renderElements[i] = <SkinRenderElement>this._createRenderElement();
                     if (this._cacheRootBone) {
                         renderElement.setTransform(this._cacheRootBone.transform);
                     } else {
@@ -300,6 +252,10 @@ export class SkinnedMeshRenderer extends MeshRenderer {
         this._setRenderElements();
     }
 
+    /**
+     * @internal
+     * @param scene 
+     */
     _setBelongScene(scene: Scene3D): void {
         super._setBelongScene(scene);
         Stat.skinRenderNode++;
@@ -331,7 +287,10 @@ export class SkinnedMeshRenderer extends MeshRenderer {
 
     }
 
-    //@(<any>window).PERF_STAT((<any>window).PerformanceDefine.T_SkinBoneUpdate)
+    /**
+     * @param context
+     * @perfTag PerformanceDefine.T_SkinBoneUpdate
+     */
     renderUpdate(context: RenderContext3D): void {
         super.renderUpdate(context);
         this._computeSkinnedData();
@@ -399,6 +358,10 @@ export class SkinnedMeshRenderer extends MeshRenderer {
         super._cloneTo(dest);
     }
 
+    /**
+     * @internal
+     * @protected
+     */
     protected _onDestroy() {
         if (this._cacheRootBone)
             (!this._cacheRootBone._destroyed) && (this._cacheRootBone.transform.off(Event.TRANSFORM_CHANGED, this, this._onWorldMatNeedChange));

@@ -227,14 +227,14 @@ export class WebGPUTest_Empty {
             //设置聚光灯锥形角度
             spotCom.spotAngle = 45;
 
-            // // Use soft shadow.
-            // spotCom.shadowMode = ShadowMode.SoftHigh;
-            // // Set shadow max distance from camera.
-            // spotCom.shadowDistance = 3;
-            // // Set shadow resolution.
-            // spotCom.shadowResolution = 1024;
-            // // Set shadow normal bias.
-            // spotCom.shadowNormalBias = 4;
+            // Use soft shadow.
+            spotCom.shadowMode = ShadowMode.SoftHigh;
+            // Set shadow max distance from camera.
+            spotCom.shadowDistance = 3;
+            // Set shadow resolution.
+            spotCom.shadowResolution = 1024;
+            // Set shadow normal bias.
+            spotCom.shadowNormalBias = 4;
 
             //打开后处理
             if (true) {

@@ -33,7 +33,7 @@ export class RTVolumetricGI implements IVolumetricGIData {
     }
     public set bound(value: Bounds) {
         this._bound = value;
-        //TODO:  this._nativeObj.setBounds(value._nativeObj);
+       this._nativeObj.setBounds(value._imp._nativeObj);
     }
     public get intensity(): number {
         return this._nativeObj._intensity;
@@ -49,7 +49,8 @@ export class RTVolumetricGI implements IVolumetricGIData {
         this._nativeObj._updateMark = value;
     }
 
-    private _nativeObj: any;
+    /**@internal */
+    _nativeObj: any;
 
     constructor() {
         this._nativeObj = new (window as any).conchRTVolumetricGI();

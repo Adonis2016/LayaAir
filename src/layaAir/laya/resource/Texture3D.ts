@@ -1,4 +1,4 @@
-import { ITexture3DContext } from "../RenderDriver/DriverDesign/RenderDevice/ITextureContext";
+import { RenderCapable } from "../RenderEngine/RenderEnum/RenderCapable";
 import { TextureDimension } from "../RenderEngine/RenderEnum/TextureDimension";
 import { TextureFormat } from "../RenderEngine/RenderEnum/TextureFormat";
 import { LayaGL } from "../layagl/LayaGL";
@@ -9,6 +9,22 @@ import { BaseTexture } from "./BaseTexture";
  */
 export class Texture3D extends BaseTexture {
 
+    private static _defaultTexture: Texture3D;
+
+    static get defaultTexture() {
+        return this._defaultTexture;
+    }
+
+    /** @internal */
+    static __init__() {
+        if (LayaGL.renderEngine.getCapable(RenderCapable.Texture3D)) {
+            this._defaultTexture = new Texture3D(1, 1, 1, TextureFormat.R8G8B8A8, false, false);
+            this._defaultTexture.lock = true;
+
+            this._defaultTexture.setPixelsData(new Uint8Array([255, 255, 255, 255]));
+        }
+    }
+
     depth: number;
 
     constructor(width: number, height: number, depth: number, format: TextureFormat, mipmap: boolean = true, sRGB: boolean = false) {
@@ -18,7 +34,7 @@ export class Texture3D extends BaseTexture {
 
         this._gammaSpace = sRGB;
 
-        let context = <ITexture3DContext>LayaGL.textureContext;
+        let context = LayaGL.textureContext;
 
         this._texture = context.createTexture3DInternal(this._dimension, width, height, depth, format, mipmap, sRGB, false);
     }
@@ -29,7 +45,7 @@ export class Texture3D extends BaseTexture {
     */
     setPixelsData(source: ArrayBufferView) {
         let texture = this._texture;
-        let context = <ITexture3DContext>LayaGL.textureContext;
+        let context = LayaGL.textureContext;
         context.setTexture3DPixelsData(texture, source, this.depth, false, false)
     }
 
@@ -47,7 +63,7 @@ export class Texture3D extends BaseTexture {
      */
     setSubPixelsData(xOffset: number, yOffset: number, zOffset: number, width: number, height: number, depth: number, pixels: ArrayBufferView, mipmapLevel: number, generateMipmap: boolean) {
         let texture = this._texture;
-        let context = <ITexture3DContext>LayaGL.textureContext;
+        let context = LayaGL.textureContext;
         context.setTexture3DSubPixelsData(texture, pixels, mipmapLevel, generateMipmap, xOffset, yOffset, zOffset, width, height, depth, false, false);
     }
 

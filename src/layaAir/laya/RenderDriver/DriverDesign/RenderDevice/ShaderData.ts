@@ -26,9 +26,11 @@ export enum ShaderDataType {
     Color,
     Matrix4x4,
     Texture2D,
+    Texture3D,
     TextureCube,
     Buffer,
     Matrix3x3,
+    Texture2DArray
 }
 
 export type ShaderDataItem = number | boolean | Vector2 | Vector3 | Vector4 | Color | Matrix4x4 | BaseTexture | Float32Array | Matrix3x3;
@@ -328,10 +330,6 @@ export class ShaderData implements IClone {
      * @return  纹理。
      */
     getTexture(index: number): BaseTexture {
-        throw new Error("Method not implemented.");
-    }
-
-    getSourceIndex(value: any): number {
         throw new Error("Method not implemented.");
     }
 

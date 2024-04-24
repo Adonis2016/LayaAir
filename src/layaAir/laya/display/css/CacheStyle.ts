@@ -1,20 +1,14 @@
 import { Point } from "../../maths/Point"
 import { Rectangle } from "../../maths/Rectangle"
-import { IAutoExpiringResource } from "../../renders/ResNeedTouch"
-import { RenderObject2D } from "../../renders/SpriteCache"
+import { CachePage, Cache_Info } from "../../renders/SpriteCache"
 import { RenderTexture2D } from "../../resource/RenderTexture2D"
 import { Pool } from "../../utils/Pool"
 import { Sprite } from "../Sprite"
 
-export class resultForCacheAsNormal{
-    meshes:RenderObject2D[]=null;
-    defferTouchRes:IAutoExpiringResource[]=null;
-    defferTouchResRand:IAutoExpiringResource[]=null;
-
-}
 /**
  * @internal
  * 存储cache相关
+ * 现在已经扩展成存储一切跟渲染相关的东西了
  */
 export class CacheStyle {
 
@@ -33,8 +27,8 @@ export class CacheStyle {
     renderTexOffx=0;
     renderTexOffy=0;
 
-    //cacheas normal的缓存
-    cacheAsNormal:resultForCacheAsNormal=null;
+    //cacheas normal相关的缓存
+    cacheInfo=new Cache_Info();
 
     constructor() {
         this.reset();

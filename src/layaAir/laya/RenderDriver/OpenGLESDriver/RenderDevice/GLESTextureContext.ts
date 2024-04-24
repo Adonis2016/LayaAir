@@ -10,7 +10,7 @@ import { InternalRenderTarget } from "../../DriverDesign/RenderDevice/InternalRe
 import { InternalTexture } from "../../DriverDesign/RenderDevice/InternalTexture";
 
 
-export class GLESTextureContext implements ITextureContext  {
+export class GLESTextureContext implements ITextureContext {
     needBitmap: boolean;
     protected _native: any;
 
@@ -19,11 +19,25 @@ export class GLESTextureContext implements ITextureContext  {
         this.needBitmap = false;
     }
 
+    createTexture3DInternal(dimension: TextureDimension, width: number, height: number, depth: number, format: TextureFormat, generateMipmap: boolean, sRGB: boolean, premultipliedAlpha: boolean): InternalTexture {
+        //return this._native.createTexture3DInternal
+        return null;
+    }
+
+    setTexture3DPixelsData(texture: InternalTexture, source: ArrayBufferView, depth: number, premultiplyAlpha: boolean, invertY: boolean): void {
+        //return this._native.setTexture3DPixelsData
+        return null;
+    }
+
     createTextureInternal(dimension: TextureDimension, width: number, height: number, format: TextureFormat, generateMipmap: boolean, sRGB: boolean, premultipliedAlpha: boolean): InternalTexture {
         return this._native.createTextureInternal(dimension, width, height, format, generateMipmap, sRGB, premultipliedAlpha);
     }
 
     setTextureImageData(texture: InternalTexture, source: HTMLImageElement | HTMLCanvasElement | ImageBitmap, premultiplyAlpha: boolean, invertY: boolean) {
+        if(source instanceof HTMLCanvasElement){
+            throw "native cant draw HTMLCanvasElement";
+            return;
+        }
         this._native.setTextureImageData(texture, (source as any)._nativeObj.conchImgId, premultiplyAlpha, invertY);
     }
 
@@ -57,7 +71,6 @@ export class GLESTextureContext implements ITextureContext  {
 
     setTextureHDRData(texture: InternalTexture, hdrInfo: HDRTextureInfo): void {
         let sourceData = hdrInfo.readScanLine();
-        throw new Error("setTextureHDRData Method not implemented.");
         this.setTexturePixelsData(texture, sourceData, false, false);
     }
     setTextureDDSData(texture: InternalTexture, ddsInfo: DDSTextureInfo) {
