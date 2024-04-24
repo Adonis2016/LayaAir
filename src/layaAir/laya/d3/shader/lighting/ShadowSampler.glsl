@@ -7,7 +7,11 @@
 
     #if defined(NO_NATIVE_SHADOWMAP)
 	#define TEXTURE2D_SHADOW(textureName)		     uniform mediump sampler2D textureName
-	#define SAMPLE_TEXTURE2D_SHADOW(textureName, coord3) (texture2D(textureName, coord3.xy).r < coord3.z ? 0.0 : 1.0)
+    // #ifdef WEBGPU_COMPATIBLE
+	// #define SAMPLE_TEXTURE2D_SHADOW(textureName, coord3) (texture2D(textureName, coord3.xy) < coord3.z ? 0.0 : 1.0)
+    // #else
+    #define SAMPLE_TEXTURE2D_SHADOW(textureName, coord3) (texture2D(textureName, coord3.xy).r < coord3.z ? 0.0 : 1.0)
+    //#endif
 	#define TEXTURE2D_SHADOW_PARAM(shadowMap)	     mediump sampler2D shadowMap
     #else // NO_NATIVE_SHADOWMAP
 	#define TEXTURE2D_SHADOW(textureName)		     uniform mediump sampler2DShadow textureName
@@ -32,14 +36,16 @@ varying vec4 v_ShadowCoord;
 TEXTURE2D_SHADOW(u_ShadowMap);
 uniform vec4 u_ShadowMapSize;
 
-#ifdef SHADOW_CASCADE
-const int c_MaxCascadeCount = 4;
-#else //SHADOW_CASCADE
-const int c_MaxCascadeCount = 1;
-#endif//SHADOW_CASCADE
+// #ifdef SHADOW_CASCADE
+// const int c_MaxCascadeCount = 4;
+// #else //SHADOW_CASCADE
+// const int c_MaxCascadeCount = 1;
+// #endif//SHADOW_CASCADE
+// uniform mat4 u_ShadowMatrices[c_MaxCascadeCount];
+// uniform vec4 u_ShadowSplitSpheres[c_MaxCascadeCount];
 
-uniform mat4 u_ShadowMatrices[c_MaxCascadeCount];
-uniform vec4 u_ShadowSplitSpheres[c_MaxCascadeCount];
+uniform mat4 u_ShadowMatrices[4];
+uniform vec4 u_ShadowSplitSpheres[4];
 	#endif // SHADOW
 
 	// 聚光灯阴影
@@ -156,7 +162,7 @@ float sampleShadowmap(in vec4 shadowCoord)
 
     vec4 shadowmapSize = u_ShadowMapSize;
 
-    if (coord.z > 0.0 && coord.z < 1.0)
+    //if (coord.z > 0.0 && coord.z < 1.0)
 	{
 	#if defined(SHADOW_SOFT_SHADOW_HIGH)
 	    attenuation = sampleShdowMapFiltered9(u_ShadowMap, coord, shadowmapSize);
@@ -168,7 +174,9 @@ float sampleShadowmap(in vec4 shadowCoord)
 	    attenuation = mix(1.0, attenuation, ShadowStrength);
 	}
 
-    return attenuation;
+    if (coord.z > 0.0 && coord.z < 1.0)
+        return attenuation;
+    return 1.0;
 }
 
     #endif // CALCULATE_SHADOWS
@@ -194,8 +202,8 @@ float sampleSpotShadowmap(vec4 shadowCoord)
 
     vec4 shadowmapSize = u_SpotShadowMapSize;
     // todo
-    if (coord.z > 0.0 && coord.z < 1.0)
-	{
+    //if (coord.z > 0.0 && coord.z < 1.0)
+	//{
 	#if defined(SHADOW_SPOT_SOFT_SHADOW_HIGH)
 	    attenuation = sampleShdowMapFiltered9(u_SpotShadowMap, coord, shadowmapSize);
 	#elif defined(SHADOW_SPOT_SOFT_SHADOW_LOW)
@@ -204,9 +212,11 @@ float sampleSpotShadowmap(vec4 shadowCoord)
 	    attenuation = SAMPLE_TEXTURE2D_SHADOW(u_SpotShadowMap, coord);
 	#endif
 	    attenuation = mix(1.0, attenuation, SpotShadowStrength);
-	}
+	//}
 
-    return attenuation;
+    if (coord.z > 0.0 && coord.z < 1.0)
+        return attenuation;
+    return 1.0;
 }
 
     #endif // CALCULATE_SPOTSHADOWS

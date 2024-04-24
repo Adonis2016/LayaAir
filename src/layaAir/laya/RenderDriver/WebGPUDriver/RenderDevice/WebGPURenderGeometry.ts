@@ -103,7 +103,7 @@ export class WebGPURenderGeometry implements IRenderGeometryElement {
         this._drawElementInfo.push({
             elementStart: offset,
             elementCount: count
-        })
+        });
     }
 
     setInstanceRenderOffset(offset: number, instanceCount: number) {

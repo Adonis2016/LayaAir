@@ -153,8 +153,9 @@ export class WebGPUDirectLightShadowRP {
         const forward = Vector3._tempVector3;
         camera.transform.getForward(forward);
         Vector3.normalize(forward, forward);
+        let sliceData: ShadowSliceData;
         for (let i = 0; i < this._cascadeCount; i++) {
-            const sliceData = this._shadowSliceDatas[i];
+            sliceData = this._shadowSliceDatas[i];
             sliceData.sphereCenterZ = ShadowUtils.getBoundSphereByFrustum(splitDistance[i], splitDistance[i + 1],
                 camera.fieldOfView * MathUtils3D.Deg2Rad, camera.aspectRatio, camera.transform.position, forward, sliceData.splitBoundSphere);
             ShadowUtils.getDirectionLightShadowCullPlanes(frustumPlanes, i, splitDistance, cameraNear, this._lightForward, sliceData);
@@ -174,18 +175,27 @@ export class WebGPUDirectLightShadowRP {
      * @param count 
      */
     render(context: WebGPURenderContext3D, list: WebBaseRenderNode[], count: number) {
-        const shaderData = context.sceneData;
+        const sceneData = context.sceneData;
         const originCameraData = context.cameraData;
         const shadowMap = this.destTarget;
-        context.pipelineMode = "ShadowCaster";
+        context.pipelineMode = 'ShadowCaster';
         context.setRenderTarget(shadowMap as WebGPUInternalRT, RenderClearFlag.Depth);
-        context.setClearData(RenderClearFlag.Depth, Color.BLACK, 1, 0);
+        context.saveViewPortAndScissor();
 
-        //需要把shadowmap clear Depth
+        //清除阴影深度信息
+        Viewport._tempViewport.set(0, 0, this._shadowMapWidth, this._shadowMapHeight);
+        Vector4.tempVec4.setValue(0, 0, this._shadowMapWidth, this._shadowMapHeight);
+        context.setViewPort(Viewport._tempViewport);
+        context.setScissor(Vector4.tempVec4);
+        context.setClearData(RenderClearFlag.Depth, Color.BLACK, 1, 0);
+        context.clearRenderTarget();
+
+        //渲染阴影深度信息
+        context.setClearData(RenderClearFlag.Nothing, Color.BLACK, 1, 0);
         for (let i = 0, n = this._cascadeCount; i < n; i++) {
             const sliceData = this._shadowSliceDatas[i];
             this._getShadowBias(sliceData.projectionMatrix, sliceData.resolution, this._shadowBias);
-            this._setupShadowCasterShaderValues(shaderData, sliceData, this._lightForward, this._shadowBias);
+            this._setupShadowCasterShaderValues(sceneData, sliceData, this._lightForward, this._shadowBias);
             const shadowCullInfo = this._shadowCullInfo;
             shadowCullInfo.position = sliceData.position;
             shadowCullInfo.cullPlanes = sliceData.cullPlanes;
@@ -201,33 +211,30 @@ export class WebGPUDirectLightShadowRP {
             const offsetX = sliceData.offsetX;
             const offsetY = sliceData.offsetY;
 
-            if (this._renderQueue.elements.length > 0) { //if one cascade have anything to render
+            if (this._renderQueue.elements.length > 0) {
                 Viewport._tempViewport.set(offsetX, offsetY, resolution, resolution);
                 Vector4.tempVec4.setValue(offsetX + 1, offsetY + 1, resolution - 2, resolution - 2);
                 context.setViewPort(Viewport._tempViewport);
                 context.setScissor(Vector4.tempVec4);
             } else {
                 Viewport._tempViewport.set(offsetX, offsetY, resolution, resolution);
-                context.setViewPort(Viewport._tempViewport);
                 Vector4.tempVec4.setValue(offsetX, offsetY, resolution, resolution);
+                context.setViewPort(Viewport._tempViewport);
                 context.setScissor(Vector4.tempVec4);
             }
 
-            if (sliceData.cameraUBO && sliceData.cameraUBData) //这里可能会有问题
-                sliceData.cameraUBO.setDataByUniformBufferData(sliceData.cameraUBData);
-
-            context.setClearData(RenderClearFlag.Depth, Color.BLACK, 1, 0);
             this._renderQueue.renderQueue(context);
             this._applyCasterPassCommandBuffer(context);
         }
         this._applyRenderData(context.sceneData, context.cameraData);
 
+        context.restoreViewPortAndScissor();
         context.cameraData = originCameraData;
         context.cameraUpdateMask++;
     }
 
     /**
-     * set shaderData after Render shadow
+     * 设置渲染数据
      * @param sceneData 
      * @param cameraData 
      */
@@ -257,7 +264,7 @@ export class WebGPUDirectLightShadowRP {
     }
 
     /**
-     * apply shadowCast cmd array
+     * 应用阴影渲染命令
      * @param context 
      */
     private _applyCasterPassCommandBuffer(context: WebGPURenderContext3D) {

@@ -4,9 +4,9 @@ import { PixelLineData } from "./PixelLineData";
 import { RenderableSprite3D } from "../RenderableSprite3D"
 import { Node } from "../../../display/Node"
 import { Sprite3D } from "../Sprite3D";
-import { UnlitMaterial } from "../material/UnlitMaterial";
 import { Color } from "../../../maths/Color";
 import { Vector3 } from "../../../maths/Vector3";
+import { PixelLineMaterial } from "./PixelLineMaterial";
 
 /**
  * <code>PixelLineSprite3D</code> 类用于像素线渲染精灵。
@@ -58,8 +58,9 @@ export class PixelLineSprite3D extends RenderableSprite3D {
         this._render = this.addComponent(PixelLineRenderer);
         this._geometryFilter = (this._render as PixelLineRenderer)._pixelLineFilter;
         (this._render as PixelLineRenderer).maxLineCount = maxCount;
-        let material = this._render.material = new UnlitMaterial();
-        material.enableVertexColor = true;
+        //let material = this._render.material = new UnlitMaterial();
+        //material.enableVertexColor = true;
+        this._render.material = new PixelLineMaterial(); //兼容WGSL
     }
 
     /**

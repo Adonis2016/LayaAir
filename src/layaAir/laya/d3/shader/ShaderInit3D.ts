@@ -47,6 +47,7 @@ import { ParticleShuriKenShaderInit } from "./ShurikenParticle/ParticleShuriKenS
 import { SkyProceduralShaderInit } from "./sky/SkyProceduralShaderInit";
 import { SkyPanoramicShaderInit } from "./sky/SkyPanoramicShaderInit";
 import { ACESShaderLib } from "./postprocess/ACES/ACESShaderLib";
+import { PixelLineShaderInit } from "./pixelLine/PixelLineShaderInit";
 
 /**
  * @internal
@@ -126,6 +127,8 @@ export class ShaderInit3D {
 		SkyProceduralShaderInit.init();
 		SkyPanoramicShaderInit.init();
 
+        PixelLineShaderInit.init(); //兼容WGSL
+
 		///////////////////////////////////////////////////////////////////////
 		Shader3D.SHADERDEFINE_LEGACYSINGALLIGHTING = Shader3D.getDefineByName("LEGACYSINGLELIGHTING");
 		Shader3D.SHADERDEFINE_ENUNIFORMBLOCK = Shader3D.getDefineByName("ENUNIFORMBLOCK");
@@ -133,4 +136,3 @@ export class ShaderInit3D {
 		Shader3D.SHADERDEFINE_FLOATTEXTURE_FIL_LINEAR = Shader3D.getDefineByName("FLOATTEXTURE_FIL_LINEAR");
 	}
 }
-

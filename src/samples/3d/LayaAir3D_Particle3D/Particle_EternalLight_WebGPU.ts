@@ -17,7 +17,9 @@ import { WebGLRenderEngineFactory } from "laya/RenderDriver/WebGLDriver/RenderDe
 import { WebGPURender2DProcess } from "laya/RenderDriver/WebGPUDriver/2DRenderPass/WebGPURender2DProcess";
 import { WebGPU3DRenderPassFactory } from "laya/RenderDriver/WebGPUDriver/3DRenderPass/WebGPU3DRenderPassFactory";
 import { WebGPURenderDeviceFactory } from "laya/RenderDriver/WebGPUDriver/RenderDevice/WebGPURenderDeviceFactory";
+import { WebGPURenderEngine } from "laya/RenderDriver/WebGPUDriver/RenderDevice/WebGPURenderEngine";
 import { WebGPURenderEngineFactory } from "laya/RenderDriver/WebGPUDriver/RenderDevice/WebGPURenderEngineFactory";
+import { RenderTargetFormat } from "laya/RenderEngine/RenderEnum/RenderTargetFormat";
 import { Handler } from "laya/utils/Handler";
 import { Stat } from "laya/utils/Stat";
 
@@ -53,6 +55,11 @@ export class Particle_EternalLight_WebGPU {
             camera.transform.rotate(new Vector3(-15, 0, 0), true, false);
             camera.clearFlag = CameraClearFlags.SolidColor;
             camera.clearColor = new Color(0, 0, 0, 1);
+            camera.msaa = true;
+            if (this.useWebGPU) {
+                WebGPURenderEngine._instance._config.msaa = camera.msaa;
+                camera.depthTextureFormat = RenderTargetFormat.DEPTHSTENCIL_24_8;
+            }
 
             Sprite3D.load("sample-resource/res/threeDimen/particle/ETF_Eternal_Light.lh", Handler.create(this, function (sprite: Sprite3D): void {
                 (<Sprite3D>scene.addChild(sprite));

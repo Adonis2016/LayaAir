@@ -52,6 +52,10 @@ import { Quaternion } from "laya/maths/Quaternion";
 import { Transform3D } from "laya/d3/core/Transform3D";
 import { PointLightCom } from "laya/d3/core/light/PointLightCom";
 import { SpotLightCom } from "laya/d3/core/light/SpotLightCom";
+import { ShadowMode } from "laya/d3/core/light/ShadowMode";
+import { MeshSprite3D } from "laya/d3/core/MeshSprite3D";
+import { ShadowCascadesMode } from "laya/d3/core/light/ShadowCascadesMode";
+import { SkinnedMeshRenderer } from "laya/d3/core/SkinnedMeshRenderer";
 
 class LightMoveScript extends Script {
     lights: Sprite3D[] = [];
@@ -171,34 +175,85 @@ export class WebGPUTest_Empty {
             const directLight = new Sprite3D();
             const dirCom = directLight.addComponent(DirectionLightCom);
             scene.addChild(directLight);
-            dirCom.color.setValue(1, 1, 1, 1);
+            dirCom.color.setValue(0.85, 0.85, 0.85, 1);
+            directLight.transform.rotate(new Vector3(-Math.PI / 3, 0, 0));
+
+            // Use soft shadow.
+            dirCom.shadowMode = ShadowMode.SoftHigh;
+            // Set shadow max distance from camera.
+            dirCom.shadowDistance = 5;
+            // Set shadow resolution.
+            dirCom.shadowResolution = 1024;
+            // Set shadow cascade mode.
+            dirCom.shadowCascadesMode = ShadowCascadesMode.FourCascades;
+            // Set shadow normal bias.
+            dirCom.shadowNormalBias = 4;
 
             //创建点光源
-            // const pointLight = new Sprite3D();
-            // const pointCom = pointLight.addComponent(PointLightCom);
-            // scene.addChild(pointLight);
-            // pointCom.color = new Color(1, 0.5, 0, 1);
-            // pointCom.range = 3;
-            // pointLight.transform.position = new Vector3(0.4, 0.4, 0);
+            const pointLight = new Sprite3D();
+            const pointCom = pointLight.addComponent(PointLightCom);
+            scene.addChild(pointLight);
+            pointCom.color = new Color(0, 1, 0, 1);
+            pointCom.range = 3;
+            pointCom.intensity = 3;
+            pointLight.transform.position = new Vector3(0.5, 1, 0);
+
+            //创建点光源2
+            {
+                const pointLight = new Sprite3D();
+                const pointCom = pointLight.addComponent(PointLightCom);
+                scene.addChild(pointLight);
+                pointCom.color = new Color(1, 0, 1, 1);
+                pointCom.range = 2;
+                pointCom.intensity = 2;
+                pointLight.transform.position = new Vector3(1, 0.5, 1);
+            }
+
+            //创建聚光灯
+            const spotlightSprite = new Sprite3D();
+            const spotCom = spotlightSprite.addComponent(SpotLightCom);
+            scene.addChild(spotlightSprite);
+
+            //设置聚光灯颜色
+            spotCom.color = new Color(1, 0, 0, 1);
+            spotlightSprite.transform.position = new Vector3(0.0, 1.5, 0.0);
+            //设置聚光灯的方向
+            const mat = spotlightSprite.transform.worldMatrix;
+            mat.setForward(new Vector3(0.15, -1.0, 0.0));
+            spotlightSprite.transform.worldMatrix = mat;
+            //设置聚光灯范围
+            spotCom.range = 2;
+            spotCom.intensity = 10;
+            //设置聚光灯锥形角度
+            spotCom.spotAngle = 45;
+
+            // // Use soft shadow.
+            // spotCom.shadowMode = ShadowMode.SoftHigh;
+            // // Set shadow max distance from camera.
+            // spotCom.shadowDistance = 3;
+            // // Set shadow resolution.
+            // spotCom.shadowResolution = 1024;
+            // // Set shadow normal bias.
+            // spotCom.shadowNormalBias = 4;
 
             //打开后处理
-            // if (true) {
-            //     const postProcess = new PostProcess();
-            //     const bloom = new BloomEffect();
-            //     postProcess.addEffect(bloom);
-            //     camera.postProcess = postProcess;
-            //     camera.enableHDR = true;
+            if (true) {
+                const postProcess = new PostProcess();
+                const bloom = new BloomEffect();
+                postProcess.addEffect(bloom);
+                camera.postProcess = postProcess;
+                camera.enableHDR = true;
 
-            //     //设置泛光参数
-            //     bloom.intensity = 5;
-            //     bloom.threshold = 0.9;
-            //     bloom.softKnee = 0.5;
-            //     bloom.clamp = 65472;
-            //     bloom.diffusion = 5;
-            //     bloom.anamorphicRatio = 0.0;
-            //     bloom.color = new Color(1, 1, 1, 1);
-            //     bloom.fastMode = true;
-            // }
+                //设置泛光参数
+                bloom.intensity = 7;
+                bloom.threshold = 0.8;
+                bloom.softKnee = 0.5;
+                bloom.clamp = 65472;
+                bloom.diffusion = 7;
+                bloom.anamorphicRatio = 0.0;
+                bloom.color = new Color(1, 1, 1, 1);
+                bloom.fastMode = true;
+            }
 
             // 演示头盔模型
             // Scene3D.load("res/threeDimen/scene/LayaScene_DamagedHelmetScene/Conventional/DamagedHelmetScene.ls", Handler.create(this, (scene: Scene3D) => {
@@ -225,7 +280,7 @@ export class WebGPUTest_Empty {
             // }));
 
             // 演示胖子骨骼动画模型
-            Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi-noShadow.lh", Handler.create(this, (node: Sprite3D) => {
+            Sprite3D.load("res/threeDimen/skinModel/BoneLinkScene/PangZi.lh", Handler.create(this, (node: Sprite3D) => {
                 scene.addChild(node);
                 node.transform.localPositionZ = -2;
                 const node2 = node.clone() as Sprite3D;
@@ -235,7 +290,7 @@ export class WebGPUTest_Empty {
             }));
 
             // 演示dude骨骼动画模型
-            // Sprite3D.load("res/threeDimen/skinModel/dude/dude-noShadow.lh", Handler.create(this, (node: Sprite3D) => {
+            // Sprite3D.load("res/threeDimen/skinModel/dude/dude.lh", Handler.create(this, (node: Sprite3D) => {
             //     scene.addChild(node);
             // }));
 
@@ -321,10 +376,11 @@ export class WebGPUTest_Empty {
             Sprite3D.load("res/threeDimen/staticModel/grid/plane.lh", Handler.create(this, (sprite: Sprite3D) => {
                 //地面
                 scene.addChild(sprite);
+                (<MeshSprite3D>sprite.getChildAt(0)).meshRenderer.receiveShadow = true;
                 //猴子
-                Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey_noShadow.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
+                Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
                     scene.addChild(layaMonkey);
-                    layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
+                    layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3)); //@ts-ignore
                     const monkey2 = layaMonkey.clone() as Sprite3D;
                     scene.addChild(monkey2);
                     monkey2.transform.localPositionX = 2;
@@ -335,10 +391,17 @@ export class WebGPUTest_Empty {
                         Vector3.transformQuat(monkey2.transform.position, this._temp_quaternion, this._temp_position);
                         monkey2.transform.position = this._temp_position;
                         //根据四元数旋转三维向量
-                        //Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
-                        //pointLight.transform.position = this._temp_position;
+                        Vector3.transformQuat(pointLight.transform.position, this._temp_quaternion, this._temp_position);
+                        pointLight.transform.position = this._temp_position;
                     });
                 }));
+            }));
+
+            //猴子
+            Sprite3D.load("res/threeDimen/skinModel/LayaMonkey/LayaMonkey.lh", Handler.create(this, (layaMonkey: Sprite3D) => {
+                scene.addChild(layaMonkey);
+                layaMonkey.transform.setWorldLossyScale(new Vector3(3, 3, 3));
+                layaMonkey.transform.localPositionZ = 2;
             }));
         });
     }

@@ -42,21 +42,23 @@ vec3 applyShadowBias(vec3 positionWS, vec3 normalWS, vec3 lightDirection)
 
 vec4 DepthPositionCS(in vec3 positionWS, in vec3 normalWS)
 {
+    vec4 positionCS;
+
     #ifdef DEPTHPASS
-    vec4 positionCS = u_ViewProjection * vec4(positionWS, 1.0);
+    positionCS = u_ViewProjection * vec4(positionWS, 1.0);
     #endif // DEPTHPASS
 
     #ifdef SHADOW
 	#ifndef DEPTHPASS
     positionWS = applyShadowBias(positionWS, normalWS, u_ShadowLightDirection);
-    vec4 positionCS = u_ViewProjection * vec4(positionWS, 1.0);
+    positionCS = u_ViewProjection * vec4(positionWS, 1.0);
     positionCS.z = max(positionCS.z, 0.0); // min ndc z is 0.0
 	#endif // DEPTHPASS
     #endif // SHADOW
 
     #ifdef SHADOW_SPOT
 	#ifndef DEPTHPASS
-    vec4 positionCS = u_ViewProjection * vec4(positionWS, 1.0);
+    positionCS = u_ViewProjection * vec4(positionWS, 1.0);
     positionCS.z = positionCS.z - u_ShadowBias.x / positionCS.w;
     positionCS.z = max(positionCS.z, 0.0); // min ndc z is 0.0
 	#endif // DEPTHPASS

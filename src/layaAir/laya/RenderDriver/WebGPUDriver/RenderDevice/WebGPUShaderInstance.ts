@@ -43,8 +43,8 @@ export class WebGPUShaderInstance implements IShaderInstance {
         const engine = WebGPURenderEngine._instance;
         const device = engine.getDevice();
         const shaderObj = WebGPUCodeGenerator.shaderLanguageProcess(
-            shaderProcessInfo.defineString, shaderProcessInfo.attributeMap,
-            shaderProcessInfo.uniformMap, shaderProcessInfo.vs, shaderProcessInfo.ps);
+            shaderProcessInfo.defineString, shaderProcessInfo.attributeMap, //@ts-ignore
+            shaderPass.uniformMap, shaderPass.arrayMap, shaderProcessInfo.vs, shaderProcessInfo.ps);
 
         this.uniformInfo = shaderObj.uniformInfo;
         this.uniformInfo.forEach(item => {
@@ -55,7 +55,6 @@ export class WebGPUShaderInstance implements IShaderInstance {
 
         this._vsShader = device.createShaderModule({ code: shaderObj.vs });
         this._fsShader = device.createShaderModule({ code: shaderObj.fs });
-
         this._shaderPass = shaderPass;
 
         //设置颜色目标模式
@@ -168,6 +167,9 @@ export class WebGPUShaderInstance implements IShaderInstance {
         return device.createPipelineLayout({ label: name, bindGroupLayouts });
     }
 
+    /**
+     * 销毁
+     */
     _disposeResource(): void {
         if (!this.destroyed) {
             WebGPUGlobal.releaseId(this);

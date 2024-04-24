@@ -758,7 +758,29 @@ export class WebGPUTextureContext implements ITextureContext {
         throw new Error("Method not implemented.");
     }
     setTextureCompareMode(texture: InternalTexture, compareMode: TextureCompareMode): TextureCompareMode {
-        throw new Error("Method not implemented.");
+        //throw new Error("Method not implemented.");
+        switch (compareMode) {
+            case TextureCompareMode.LEQUAL:
+                break;
+            case TextureCompareMode.GEQUAL:
+                break;
+            case TextureCompareMode.LESS:
+                break;
+            case TextureCompareMode.GREATER:
+                break;
+            case TextureCompareMode.EQUAL:
+                break;
+            case TextureCompareMode.NOTEQUAL:
+                break;
+            case TextureCompareMode.ALWAYS:
+                break;
+            case TextureCompareMode.NEVER:
+                break;
+            case TextureCompareMode.None:
+            default:
+                break;
+        }
+        return compareMode;
     }
     createRenderTextureInternal(dimension: TextureDimension, width: number, height: number, format: RenderTargetFormat, generateMipmap: boolean, sRGB: boolean): InternalTexture {
         throw new Error("Method not implemented.");
@@ -783,6 +805,16 @@ export class WebGPUTextureContext implements ITextureContext {
             WebGPUGlobal.action(internalRT._texturesResolve[0], 'allocMemory | texture', (width * height * pixelByteSize * (generateMipmap ? 1.33333 : 1)) | 0);
         }
 
+        if (colorFormat === RenderTargetFormat.DEPTH_16
+            || colorFormat === RenderTargetFormat.DEPTH_32
+            || colorFormat === RenderTargetFormat.DEPTHSTENCIL_24_Plus) {
+            depthStencilFormat = RenderTargetFormat.R8G8B8A8;
+            const array = new Uint16Array(width * height);
+            for (let j = 0; j < height; j++)
+                for (let i = 0; i < width; i++)
+                    array[j * width + i] = 65535;
+            this.setTexturePixelsData(internalRT._textures[0], array, false, false);
+        }
         if (depthStencilFormat !== RenderTargetFormat.None) {
             const pixelByteSize = this._getGPURenderTexturePixelByteSize(depthStencilFormat);
             const gpuDepthFormat = this._getGPURenderTargetFormat(depthStencilFormat, false);

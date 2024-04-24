@@ -107,7 +107,7 @@ export class WebGPUTest_PBR2 {
             dirCom.color.setValue(1.2, 1.2, 1.2, 1);
 
             //打开后处理
-            if (false) {
+            if (true) {
                 const postProcess = new PostProcess();
                 const bloom = new BloomEffect();
                 postProcess.addEffect(bloom);
@@ -115,11 +115,11 @@ export class WebGPUTest_PBR2 {
                 camera.enableHDR = true;
 
                 //设置泛光参数
-                bloom.intensity = 5;
-                bloom.threshold = 0.9;
+                bloom.intensity = 10;
+                bloom.threshold = 0.8;
                 bloom.softKnee = 0.5;
                 bloom.clamp = 65472;
-                bloom.diffusion = 5;
+                bloom.diffusion = 7;
                 bloom.anamorphicRatio = 0.0;
                 bloom.color = new Color(1, 1, 1, 1);
                 bloom.fastMode = true;
@@ -227,8 +227,8 @@ export class WebGPUTest_PBR2 {
                 bs3d.addComponent(MeshFilter).sharedMesh = boxMesh1;
                 const render = bs3d.addComponent(MeshRenderer);
                 render.material = materials[i];
-                //render.castShadow = true;
-                //render.receiveShadow = false;
+                render.castShadow = true;
+                render.receiveShadow = true;
                 //@ts-ignore
                 bs3d.rotate = new Vector3((Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02);
             }

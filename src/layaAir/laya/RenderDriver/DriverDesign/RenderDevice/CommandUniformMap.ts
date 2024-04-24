@@ -4,8 +4,8 @@ export type UniformProperty = { id: number, propertyName: string, uniformtype: S
 export class CommandUniformMap {
 
 	constructor(stateName: string) {
-
 	}
+
 	/**
 	 * 增加一个Uniform参数
 	 * @param propertyID 
@@ -15,6 +15,15 @@ export class CommandUniformMap {
 		throw "need override it";
 	}
 
+    /**
+     * 增加一个UniformArray参数
+     * @param propertyID 
+     * @param propertyName 
+     */
+    addShaderUniformArray(propertyID: number, propertyName: string, uniformtype: ShaderDataType, arrayLength: number, block: string = ""): void {
+        throw "need override it";
+    }
+
 	/**
 	 * 增加一个Uniform
 	 * @param propertyID 
@@ -23,5 +32,4 @@ export class CommandUniformMap {
 	addShaderBlockUniform(propertyID: number, blockname: string, blockProperty: UniformProperty[]): void {
 		throw "need override it";
 	}
-
 }

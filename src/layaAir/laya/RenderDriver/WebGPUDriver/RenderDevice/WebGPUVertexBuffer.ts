@@ -20,12 +20,14 @@ export class WebGPUVertexBuffer implements IVertexBuffer {
         this.globalId = WebGPUGlobal.getId(this);
     }
 
-    setData(buffer: ArrayBuffer, bufferOffset: number, dataStartIndex: number, dataCount: number): void {
+    setData(buffer: ArrayBuffer, bufferOffset: number = 0, dataStartIndex: number = 0, dataCount: number = Number.MAX_SAFE_INTEGER): void {
         const needSubData: boolean = dataStartIndex !== 0 || dataCount !== Number.MAX_SAFE_INTEGER;
         if (needSubData) {
-            const subData: Uint8Array = new Uint8Array(buffer, dataStartIndex, dataCount);
-            this.source.setData(subData, bufferOffset);
-            this.buffer = subData.buffer;
+            //const subData: Uint8Array = new Uint8Array(buffer, dataStartIndex, dataCount);
+            //this.source.setData(subData, bufferOffset);
+            //this.buffer = subData.buffer;
+            this.source.setDataEx(buffer, dataStartIndex, dataCount, bufferOffset);
+            this.buffer = buffer;
         } else {
             this.source.setData(buffer, bufferOffset);
             this.buffer = buffer;

@@ -97,7 +97,7 @@ export class WebGPU3DRenderPass implements IRender3DProcess {
         this._renderPass.shadowCastPass = enableShadow;
 
         if (enableShadow) {
-            //线性光源阴影
+            //直线光源阴影
             const mainDirectionLight = camera.scene._mainDirectionLight;
             const needDirectionShadow = mainDirectionLight && mainDirectionLight.shadowMode !== ShadowMode.None;
             if (needDirectionShadow)
@@ -136,7 +136,7 @@ export class WebGPU3DRenderPass implements IRender3DProcess {
     }
 
     /**
-     * 渲染深度图
+     * 渲染深度图设置
      * @param camera 
      */
     private _renderDepth(camera: Camera) {
@@ -173,7 +173,7 @@ export class WebGPU3DRenderPass implements IRender3DProcess {
      * @param list 
      * @param count 
      */
-    private _renderForwardAddCameraPass(context: WebGPURenderContext3D, renderPass: WebGPUForwardAddRP, list: WebBaseRenderNode[], count: number): void {
+    private _renderForwardAddCameraPass(context: WebGPURenderContext3D, renderPass: WebGPUForwardAddRP, list: WebBaseRenderNode[], count: number) {
         if (renderPass.shadowCastPass) {
             if (renderPass.enableDirectLightShadow) {
                 renderPass.directLightShadowPass.update(context);
@@ -189,6 +189,7 @@ export class WebGPU3DRenderPass implements IRender3DProcess {
 
         if (renderPass.enablePostProcess && renderPass.postProcess)
             this._renderPostProcess(renderPass.postProcess, context);
+
         renderPass._afterAllRenderCMDS && this._renderCmd(renderPass._afterAllRenderCMDS, context);
     }
 

@@ -2,6 +2,7 @@ import { RenderClearFlag } from "../../../RenderEngine/RenderEnum/RenderClearFla
 import { ForwardAddClusterRP } from "../../DriverCommon/ForwardAddClusterRP";
 import { RenderPassUtil } from "../../DriverCommon/RenderPassUtil";
 import { IRenderContext3D, IRenderElement3D } from "../../DriverDesign/3DRenderPass/I3DRenderPass";
+import { WebGPURenderContext3D } from "./WebGPURenderContext3D";
 
 /**
  * WebGPU前向渲染流程
@@ -13,9 +14,13 @@ export class WebGPUForwardAddClusterRP extends ForwardAddClusterRP {
      */
     protected _mainPass(context: IRenderContext3D): void {
         context.pipelineMode = this.pipelineMode;
+        this.clearFlag = RenderClearFlag.Color | RenderClearFlag.Depth | RenderClearFlag.Stencil;
+        context.setClearData(this.clearFlag, this.clearColor, 1, 0);
+        context.setRenderTarget(this.destTarget, this.clearFlag);
+        (context as WebGPURenderContext3D).clearRenderTarget();
+
         RenderPassUtil.renderCmd(this.beforeForwardCmds, context);
         RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
-
         RenderPassUtil.renderCmd(this.beforeSkyboxCmds, context);
         RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
 
@@ -35,6 +40,8 @@ export class WebGPUForwardAddClusterRP extends ForwardAddClusterRP {
         }
         RenderPassUtil.renderCmd(this.beforeTransparentCmds, context);
         RenderPassUtil.recoverRenderContext3D(context, this.destTarget);
+
+        context.setClearData(RenderClearFlag.Nothing, this.clearColor, 1, 0);
         this._transparent.renderQueue(context);
     }
 }

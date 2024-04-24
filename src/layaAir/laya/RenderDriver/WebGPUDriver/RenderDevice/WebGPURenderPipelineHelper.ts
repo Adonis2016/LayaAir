@@ -198,7 +198,7 @@ export class WebGPUDepthStencilState {
         return {
             format: stateFormat,
             depthCompare: stateDepthCompare,
-            depthWriteEnabled: depthWriteEnabled
+            depthWriteEnabled,
         };
     }
 }
@@ -327,24 +327,43 @@ export class WebGPURenderPipeline {
         descriptor.vertex.buffers = vertexBuffers;
         //descriptor.vertex.constants TODO
         const textureNum = renderTarget._textures.length;
-        if (renderTarget._colorStates.length === textureNum) {
-            for (let i = renderTarget._colorStates.length - 1; i > -1; i--)
-                renderTarget._colorStates[i].blend = blendState;
+        if (renderTarget._textures[0]._webGPUFormat === 'depth16unorm') {
+            renderTarget._colorStates.length = 0;
+            renderTarget._colorStates[0] = {
+                format: renderTarget._depthTexture._webGPUFormat,
+                blend: blendState,
+                writeMask: GPUColorWrite.ALL,
+            };
         } else {
-            renderTarget._colorStates.length = textureNum;
-            for (let i = 0; i < textureNum; i++) {
-                renderTarget._colorStates[i] = {
-                    format: renderTarget._textures[i]._webGPUFormat,
-                    blend: blendState,
-                    writeMask: GPUColorWrite.ALL,
-                };
+            if (renderTarget._colorStates.length === textureNum) {
+                for (let i = renderTarget._colorStates.length - 1; i > -1; i--) {
+                    renderTarget._colorStates[i].format = renderTarget._textures[i]._webGPUFormat;
+                    renderTarget._colorStates[i].blend = blendState;
+                }
+            } else {
+                renderTarget._colorStates.length = textureNum;
+                for (let i = 0; i < textureNum; i++) {
+                    renderTarget._colorStates[i] = {
+                        format: renderTarget._textures[i]._webGPUFormat,
+                        blend: blendState,
+                        writeMask: GPUColorWrite.ALL,
+                    };
+                }
             }
         }
         descriptor.fragment.targets = renderTarget._colorStates;
         descriptor.primitive = primitiveState;
-        if (depthState)
-            descriptor.depthStencil = depthState;
-        else delete descriptor.depthStencil;
+        if (renderTarget._textures[0]._webGPUFormat === 'depth16unorm') {
+            descriptor.depthStencil = {
+                format: renderTarget._textures[0]._webGPUFormat,
+                depthWriteEnabled: true,
+                depthCompare: 'less'
+            };
+        } else {
+            if (depthState)
+                descriptor.depthStencil = depthState;
+            else delete descriptor.depthStencil;
+        }
         descriptor.layout = shaderInstance.createPipelineLayout(device, 'pipelineLayout_' + this.idCounter, entries);
         descriptor.multisample.count = renderTarget._samples;
         const renderPipeline = device.createRenderPipeline(descriptor);

@@ -133,6 +133,7 @@ export class WebGPUShaderData extends ShaderData {
      */
     createBindGroupLayoutEntry(info: WebGPUUniformPropertyBindingInfo[]) {
         const bindGroupLayoutEntries = [];
+        let internalTex: WebGPUInternalTex;
         for (const item of info) {
             switch (item.type) {
                 case WebGPUBindingInfoType.buffer:
@@ -149,9 +150,15 @@ export class WebGPUShaderData extends ShaderData {
                         const texture = this.getTexture(item.propertyId);
                         if (!texture) return null;
                         else {
-                            if (texture.format === TextureFormat.R32G32B32A32)
+                            if (texture instanceof WebGPUInternalTex)
+                                internalTex = texture;
+                            else internalTex = texture._texture as WebGPUInternalTex;
+                            if (internalTex._webGPUFormat === WebGPUTextureFormat.depth16unorm)
                                 item.texture.sampleType = 'unfilterable-float';
-                            else item.texture.sampleType = 'float';
+                            else
+                                if (texture.format === TextureFormat.R32G32B32A32)
+                                    item.texture.sampleType = 'unfilterable-float';
+                                else item.texture.sampleType = 'float';
                             bindGroupLayoutEntries.push({
                                 binding: item.binding,
                                 visibility: item.visibility,
@@ -165,9 +172,18 @@ export class WebGPUShaderData extends ShaderData {
                         const texture = this.getTexture(item.propertyId);
                         if (!texture) return null;
                         else {
-                            if (texture.format === TextureFormat.R32G32B32A32)
+                            if (texture instanceof WebGPUInternalTex)
+                                internalTex = texture;
+                            else internalTex = texture._texture as WebGPUInternalTex;
+                            // if (internalTex.compareMode > 0)
+                            //     item.sampler.type = 'comparison';
+                            // else 
+                            if (internalTex._webGPUFormat === WebGPUTextureFormat.depth16unorm)
                                 item.sampler.type = 'non-filtering';
-                            else item.sampler.type = 'filtering';
+                            else
+                                if (texture.format === TextureFormat.R32G32B32A32)
+                                    item.sampler.type = 'non-filtering';
+                                else item.sampler.type = 'filtering';
                             bindGroupLayoutEntries.push({
                                 binding: item.binding,
                                 visibility: item.visibility,
@@ -247,12 +263,12 @@ export class WebGPUShaderData extends ShaderData {
                                 if (texture instanceof WebGPUInternalTex)
                                     internalTex = texture;
                                 else internalTex = texture._texture as WebGPUInternalTex;
-                                // if (texture.format === TextureFormat.R32G32B32A32)
-                                //     item.texture.sampleType = 'unfilterable-float';
-                                // else item.texture.sampleType = 'float';
-                                if (internalTex._webGPUFormat === WebGPUTextureFormat.rgba32float)
+                                if (internalTex._webGPUFormat === WebGPUTextureFormat.depth16unorm)
                                     item.texture.sampleType = 'unfilterable-float';
-                                else item.texture.sampleType = 'float';
+                                else
+                                    if (internalTex._webGPUFormat === WebGPUTextureFormat.rgba32float)
+                                        item.texture.sampleType = 'unfilterable-float';
+                                    else item.texture.sampleType = 'float';
                                 bindGroupLayoutEntries.push({
                                     binding: item.binding,
                                     visibility: item.visibility,
@@ -273,12 +289,15 @@ export class WebGPUShaderData extends ShaderData {
                                 if (texture instanceof WebGPUInternalTex)
                                     internalTex = texture;
                                 else internalTex = texture._texture as WebGPUInternalTex;
-                                // if (texture.format === TextureFormat.R32G32B32A32)
-                                //     item.sampler.type = 'non-filtering';
-                                // else item.sampler.type = 'filtering';
-                                if (internalTex._webGPUFormat === WebGPUTextureFormat.rgba32float)
+                                // if (internalTex.compareMode > 0)
+                                //     item.sampler.type = 'comparison';
+                                // else
+                                if (internalTex._webGPUFormat === WebGPUTextureFormat.depth16unorm)
                                     item.sampler.type = 'non-filtering';
-                                else item.sampler.type = 'filtering';
+                                else
+                                    if (internalTex._webGPUFormat === WebGPUTextureFormat.rgba32float)
+                                        item.sampler.type = 'non-filtering';
+                                    else item.sampler.type = 'filtering';
                                 bindGroupLayoutEntries.push({
                                     binding: item.binding,
                                     visibility: item.visibility,
@@ -680,12 +699,26 @@ export class WebGPUShaderData extends ShaderData {
                     this.addDefine(shaderDefine);
                 else this.removeDefine(shaderDefine);
             }
+            // if (shaderDefine) {
+            //     if (value.gammaCorrection > 1) {
+            //         if (!this.hasDefine(shaderDefine)) {
+            //             this.addDefine(shaderDefine);
+            //             this.changeMark++;
+            //         }
+            //     } else {
+            //         if (this.hasDefine(shaderDefine)) {
+            //             this.removeDefine(shaderDefine);
+            //             this.changeMark++;
+            //         }
+            //     }
+            // }
         }
+        //if ((!lastValue && value) || (lastValue && !value))
+        this.changeMark++;
         this._data[index] = value;
         lastValue && lastValue._removeReference();
         value && value._addReference();
         this.clearBindGroup(); //清理绑定组（重建绑定）
-        this.changeMark++;
         if (this.coShaderData)
             for (let i = this.coShaderData.length - 1; i > -1; i--)
                 this.coShaderData[i].setTexture(index, value);
@@ -698,6 +731,7 @@ export class WebGPUShaderData extends ShaderData {
      */
     _setInternalTexture(index: number, value: InternalTexture) {
         const lastValue: InternalTexture = this._data[index];
+        if (lastValue === value) return;
         if (value) {
             const shaderDefine = WebGPURenderEngine._instance._texGammaDefine[index];
             if (shaderDefine) {
@@ -705,10 +739,24 @@ export class WebGPUShaderData extends ShaderData {
                     this.addDefine(shaderDefine);
                 else this.removeDefine(shaderDefine);
             }
+            // if (shaderDefine) {
+            //     if (value.gammaCorrection > 1) {
+            //         if (!this.hasDefine(shaderDefine)) {
+            //             this.addDefine(shaderDefine);
+            //             this.changeMark++;
+            //         }
+            //     } else {
+            //         if (this.hasDefine(shaderDefine)) {
+            //             this.removeDefine(shaderDefine);
+            //             this.changeMark++;
+            //         }
+            //     }
+            // }
         }
+        //if ((!lastValue && value) || (lastValue && !value))
+        this.changeMark++;
         this._data[index] = value;
         this.clearBindGroup(); //清理绑定组（重建绑定）
-        this.changeMark++;
         if (this.coShaderData)
             for (let i = this.coShaderData.length - 1; i > -1; i--)
                 this.coShaderData[i]._setInternalTexture(index, value);

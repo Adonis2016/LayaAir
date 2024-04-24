@@ -10,7 +10,6 @@ import { IDefineDatas } from "../../RenderDriver/RenderModuleData/Design/IDefine
 import { Laya3DRender } from "../../d3/RenderObjs/Laya3DRender";
 import { IShaderInstance } from "../../RenderDriver/DriverDesign/RenderDevice/IShaderInstance";
 
-
 /**
  * <code>ShaderPass</code> 类用于实现ShaderPass。
  */
@@ -146,6 +145,16 @@ export class ShaderPass extends ShaderCompileDefineBase {
         shader = ShaderPass.createShaderInstance(this, IS2d, compileDefine);
         this.moduleData.setCacheShader(compileDefine, shader);
         return shader;
+    }
+
+    /**
+     * 获取uniform信息
+     * @param compileDefine 
+     */
+    getUniform(compileDefine: IDefineDatas) { //兼容WGSL
+        const defineString = ShaderPass._defineStrings;
+        Shader3D._getNamesByDefineData(compileDefine, defineString); //@ts-ignore
+        return LayaGL.renderDeviceFactory.getUniform(defineString, this._owner._uniformMap, this._VS, this._PS);
     }
 }
 

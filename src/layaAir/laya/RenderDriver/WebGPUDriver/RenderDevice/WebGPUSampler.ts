@@ -84,28 +84,16 @@ export class WebGPUSampler {
     }
 
     private _getSamplerDescriptor(params: WebGPUSamplerParams) {
-        let CompareSamplerFun = this._getGPUCompareFunction(params.comparedMode);
-        if (CompareSamplerFun)
-            return {
-                addressModeU: this._getSamplerAddressMode(params.wrapU),
-                addressModeV: this._getSamplerAddressMode(params.wrapU),
-                addressModeW: this._getSamplerAddressMode(params.warpW),
-                magFilter: this._getFilterMode(params.filterMode),
-                minFilter: this._getFilterMode(params.filterMode),
-                mipmapFilter: this._getFilterMode(params.mipmapFilter),
-                compare: CompareSamplerFun,
-                maxAnisotropy: params.anisoLevel
-            }
-        else
-            return {
-                addressModeU: this._getSamplerAddressMode(params.wrapU),
-                addressModeV: this._getSamplerAddressMode(params.wrapU),
-                addressModeW: this._getSamplerAddressMode(params.warpW),
-                magFilter: this._getFilterMode(params.filterMode),
-                minFilter: this._getFilterMode(params.filterMode),
-                mipmapFilter: this._getFilterMode(params.mipmapFilter),
-                maxAnisotropy: params.anisoLevel
-            }
+        return {
+            addressModeU: this._getSamplerAddressMode(params.wrapU),
+            addressModeV: this._getSamplerAddressMode(params.wrapU),
+            addressModeW: this._getSamplerAddressMode(params.warpW),
+            magFilter: this._getFilterMode(params.filterMode),
+            minFilter: this._getFilterMode(params.filterMode),
+            mipmapFilter: this._getFilterMode(params.mipmapFilter),
+            compare: this._getGPUCompareFunction(params.comparedMode),
+            maxAnisotropy: params.anisoLevel
+        }
     }
 
     private _getSamplerAddressMode(warpmode: WrapMode): GPUAddressMode {
@@ -136,6 +124,7 @@ export class WebGPUSampler {
     }
 
     private _getGPUCompareFunction(comparedMode: TextureCompareMode): GPUCompareFunction {
+        return undefined; //暂时不支持compare模式
         switch (comparedMode) {
             case TextureCompareMode.ALWAYS:
                 return GPUCompareFunction.always;
@@ -153,8 +142,9 @@ export class WebGPUSampler {
                 return GPUCompareFunction.never;
             case TextureCompareMode.NOTEQUAL:
                 return GPUCompareFunction.not_equal;
+            case TextureCompareMode.None:
             default:
-                return null;
+                return undefined;
         }
     }
 }

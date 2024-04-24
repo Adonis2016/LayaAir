@@ -86,13 +86,13 @@ export class WebGPURenderCommandEncoder {
         const { bufferState, indexFormat, drawType, instanceCount, _drawArrayInfo, _drawElementInfo } = geometry;
         const { _vertexBuffers: vertexBuffers, _bindedIndexBuffer: indexBuffer } = bufferState;
 
-        let format: GPUIndexFormat = "uint16";
+        let format: GPUIndexFormat = 'uint16';
         let indexByte = 2; //index的字节数
 
         if (setBuffer) {
             vertexBuffers.forEach((vb, i) => this.setVertexBuffer(i, vb.source._source, 0, vb.source._size));
             if (indexBuffer) {
-                format = (indexFormat === IndexFormat.UInt16) ? "uint16" : "uint32";
+                format = (indexFormat === IndexFormat.UInt16) ? 'uint16' : 'uint32';
                 indexByte = (indexFormat === IndexFormat.UInt16) ? 2 : 4;
                 this.setIndexBuffer(indexBuffer.source._source, format, indexBuffer.source._size, 0);
             }
@@ -126,13 +126,12 @@ export class WebGPURenderCommandEncoder {
         const { bufferState, indexFormat, drawType, instanceCount, _drawArrayInfo, _drawElementInfo } = geometry;
         const { _vertexBuffers: vertexBuffers, _bindedIndexBuffer: indexBuffer } = bufferState;
 
-        let format: GPUIndexFormat = "uint16";
+        let format: GPUIndexFormat = 'uint16';
         let indexByte = 2; //index的字节数
-
         if (setBuffer) {
             vertexBuffers.forEach((vb, i) => this.setVertexBuffer(i, vb.source._source, 0, vb.source._size));
             if (indexBuffer) {
-                format = (indexFormat === IndexFormat.UInt16) ? "uint16" : "uint32";
+                format = (indexFormat === IndexFormat.UInt16) ? 'uint16' : 'uint32';
                 indexByte = (indexFormat === IndexFormat.UInt16) ? 2 : 4;
                 this.setIndexBuffer(indexBuffer.source._source, format, indexBuffer.source._size, 0);
             }

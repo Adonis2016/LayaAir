@@ -132,7 +132,10 @@ export class WebGPUTest {
                         boxS3D.push(bs3d);
                         bs3d.transform.position = new Vector3(i - n * 0.5, j - m * 0.5, k - l * 0.5);
                         bs3d.addComponent(MeshFilter).sharedMesh = boxMesh1;
-                        bs3d.addComponent(MeshRenderer).material = material1;
+                        const render = bs3d.addComponent(MeshRenderer);
+                        render.material = material1;
+                        render.castShadow = true;
+                        render.receiveShadow = true;
                         //@ts-ignore
                         bs3d.rotate = new Vector3((Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02);
                     }
@@ -186,19 +189,19 @@ export class WebGPUTest {
             // meshRenderer2.castShadow = false;
             // meshRenderer2.receiveShadow = false;
 
-            if (this.useWebGPU) {
-                Laya.timer.loop(3000, this, () => { WebGPUStatis.printFrameStatis(); });
-                Laya.timer.once(5000, this, () => {
-                    WebGPUStatis.printStatisticsAsTable();
-                    WebGPUStatis.printTotalStatis();
-                    WebGPUStatis.printTextureStatis();
-                    console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('scene3D'));
-                    console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('camera'));
-                    console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('material'));
-                    console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('sprite3D'));
-                    console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('sprite3D_static'));
-                });
-            }
+            // if (this.useWebGPU) {
+            //     Laya.timer.loop(3000, this, () => { WebGPUStatis.printFrameStatis(); });
+            //     Laya.timer.once(5000, this, () => {
+            //         WebGPUStatis.printStatisticsAsTable();
+            //         WebGPUStatis.printTotalStatis();
+            //         WebGPUStatis.printTextureStatis();
+            //         console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('scene3D'));
+            //         console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('camera'));
+            //         console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('material'));
+            //         console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('sprite3D'));
+            //         console.log(WebGPURenderEngine._instance.gpuBufferMgr.namedBuffers.get('sprite3D_static'));
+            //     });
+            // }
         });
     }
 }

@@ -71,23 +71,18 @@ export class WebGPUBuffer {
         // this._engine._addStatisticsInfo(RenderStatisticsInfo.GPUMemory, bytelength);
     }
 
-    setData(srcData: ArrayBuffer | ArrayBufferView, offset: number) {
+    setData(srcData: ArrayBuffer | ArrayBufferView, srcOffset: number) {
         if ((srcData as ArrayBufferView).buffer)
             srcData = (srcData as ArrayBufferView).buffer;
-        const size = roundDown(srcData.byteLength - offset, 4); //这里需要进一步处理，目前是截断到4字节对齐，可能会导致数据不完整
-        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, 0, srcData, offset, size);
+        const size = roundDown(srcData.byteLength - srcOffset, 4); //这里需要进一步处理，目前是截断到4字节对齐，可能会导致数据不完整
+        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, 0, srcData, srcOffset, size);
     }
 
-    setDataEx(srcData: ArrayBuffer | ArrayBufferView, offset: number, bytelength: number, dstOffset: number = 0) {
+    setDataEx(srcData: ArrayBuffer | ArrayBufferView, srcOffset: number, byteLength: number, dstOffset: number = 0) {
         if ((srcData as ArrayBufferView).buffer)
             srcData = (srcData as ArrayBufferView).buffer;
-        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, dstOffset, srcData, offset, bytelength);
-    }
-
-    setSubDataEx(srcData: ArrayBuffer | ArrayBufferView, offset: number, bytelength: number, dstOffset: number = 0) {
-        if ((srcData as ArrayBufferView).buffer)
-            srcData = (srcData as ArrayBufferView).buffer;
-        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, dstOffset, srcData, offset, bytelength);
+        const size = roundDown(byteLength, 4); //这里需要进一步处理，目前是截断到4字节对齐，可能会导致数据不完整
+        WebGPURenderEngine._instance.getDevice().queue.writeBuffer(this._source, dstOffset, srcData, srcOffset, size);
     }
 
     //TODO

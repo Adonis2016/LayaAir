@@ -139,8 +139,10 @@ export class WebGPUSpotLightShadowRP {
         const originCameraData = context.cameraData;
         const shadowSpotData = this._shadowSpotData;
         const shaderData: WebGPUShaderData = context.sceneData;
-        context.pipelineMode = "ShadowCaster";
+        context.pipelineMode = 'ShadowCaster';
         context.setRenderTarget(this.destTarget as WebGPUInternalRT, RenderClearFlag.Depth);
+        context.saveViewPortAndScissor();
+
         this._getShadowBias(shadowSpotData.resolution, this._shadowBias);
         this._setupShadowCasterShaderValues(shaderData, shadowSpotData, this._shadowParams, this._shadowBias);
         RenderCullUtil.cullSpotShadow(shadowSpotData.cameraCullInfo, list, count, this._renderQueue, context);
@@ -160,6 +162,7 @@ export class WebGPUSpotLightShadowRP {
         this._applyCasterPassCommandBuffer(context);
         this._applyRenderData(context.sceneData, context.cameraData);
 
+        context.restoreViewPortAndScissor();
         context.cameraData = originCameraData;
         context.cameraUpdateMask++;
     }
@@ -230,15 +233,15 @@ export class WebGPUSpotLightShadowRP {
     private _setupShadowCasterShaderValues(shaderData: WebGPUShaderData, shadowSliceData: ShadowSpotData, shadowParams: Vector4, shadowBias: Vector4) {
         shaderData.setVector(ShadowCasterPass.SHADOW_BIAS, shadowBias);
         shaderData.setVector(ShadowCasterPass.SHADOW_PARAMS, shadowParams);
-        const cameraData = shadowSliceData.cameraShaderData; //TODO:should optimization with shader upload.
+        shaderData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
+        const cameraData = shadowSliceData.cameraShaderData;
         cameraData.setMatrix4x4(BaseCamera.VIEWMATRIX, shadowSliceData.viewMatrix);
         cameraData.setMatrix4x4(BaseCamera.PROJECTMATRIX, shadowSliceData.projectionMatrix);
         cameraData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
-        shaderData.setMatrix4x4(BaseCamera.VIEWPROJECTMATRIX, shadowSliceData.viewProjectMatrix);
     }
 
     /**
-     * apply shadowCast cmd array
+     * 应用阴影渲染命令
      * @param context 
      */
     private _applyCasterPassCommandBuffer(context: WebGPURenderContext3D) {
